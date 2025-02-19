@@ -2,6 +2,8 @@
 @using E_Commerce_FrontEnd.Services
 @inject ICartService CartService
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+@inject IFavoriteService FavoriteService
 
 <div class="card h-100 border-0 shadow-sm product-card hover-scale">
     <div class="position-relative">
@@ -12,8 +14,8 @@
              style="height: 200px; object-fit: cover;"
              alt="@Product.ProductName">
         <div class="product-overlay">
-            <button class="btn btn-sm btn-outline-light me-2" @onclick="AddToFavorites">
-                <i class="bi bi-heart"></i>
+            <button class="btn btn-sm btn-outline-light me-2" @onclick="ToggleFavorite">
+                <i class="bi @(IsFavorite ? "bi-heart-fill text-danger" : "bi-heart")"></i>
             </button>
             <button class="btn btn-sm btn-outline-light" @onclick="ShowProductDetails">
                 <i class="bi bi-eye"></i>
@@ -83,21 +85,42 @@
     [Parameter]
     public Product Product { get; set; }
 
+    private bool IsFavorite => FavoriteService.IsFavorite(Product.Id);
+
     private async Task AddToCart()
     {
         try
         {
             await CartService.AddToCart(Product);
+            await JSRuntime.InvokeVoidAsync("alert", "Ürün sepete eklendi!");
         }
         catch (Exception ex)
         {
+            await JSRuntime.InvokeVoidAsync("alert", ex.Message);
             Console.WriteLine($"Ürün sepete eklenirken hata oluştu: {ex.Message}");
         }
     }
 
-    private void AddToFavorites()
+    private async Task ToggleFavorite()
     {
-        // Favorilere ekleme işlemi
+        try
+        {
+            if (IsFavorite)
+            {
+                await FavoriteService.RemoveFromFavorites(Product.Id);
+                await JSRuntime.InvokeVoidAsync("alert", "Ürün favorilerden kaldırıldı!");
+            }
+            else
+            {
+                await FavoriteService.AddToFavorites(Product);
+                await JSRuntime.InvokeVoidAsync("alert", "Ürün favorilere eklendi!");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Bir hata oluştu!");
+            Console.WriteLine($"Favori işlemi sırasında hata: {ex.Message}");
+        }
     }
 
     private void ShowProductDetails()

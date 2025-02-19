@@ -7,14 +7,16 @@ namespace E_Commerce_FrontEnd.Services
     public class CartService : ICartService
     {
         private readonly IJSRuntime _jsRuntime;
+        private readonly IProductService _productService;
         private const string CART_KEY = "shopping_cart";
         private List<CartItem> _cartItems;
 
         public event Action OnChange;
 
-        public CartService(IJSRuntime jsRuntime)
+        public CartService(IJSRuntime jsRuntime, IProductService productService)
         {
             _jsRuntime = jsRuntime;
+            _productService = productService;
         }
 
         public async Task<List<CartItem>> GetCartItems()
@@ -31,8 +33,25 @@ namespace E_Commerce_FrontEnd.Services
 
         public async Task AddToCart(Product product, int quantity = 1)
         {
+            var currentProduct = await _productService.GetProductById(product.Id);
+            if (currentProduct == null)
+            {
+                throw new Exception("Ürün bulunamadı.");
+            }
+
             var items = await GetCartItems();
             var existingItem = items.FirstOrDefault(i => i.ProductId == product.Id);
+
+            int totalRequestedQuantity = quantity;
+            if (existingItem != null)
+            {
+                totalRequestedQuantity += existingItem.Quantity;
+            }
+
+            if (totalRequestedQuantity > currentProduct.StockQuantity)
+            {
+                throw new Exception($"Üzgünüz, bu üründen yalnızca {currentProduct.StockQuantity} adet stok kaldı.");
+            }
 
             if (existingItem != null)
             {
@@ -63,10 +82,24 @@ namespace E_Commerce_FrontEnd.Services
             
             if (item != null)
             {
-                item.Quantity = quantity;
-                if (item.Quantity <= 0)
+                var currentProduct = await _productService.GetProductById(item.ProductId);
+                if (currentProduct == null)
+                {
+                    throw new Exception("Ürün bulunamadı.");
+                }
+
+                if (quantity > currentProduct.StockQuantity)
+                {
+                    throw new Exception($"Üzgünüz, bu üründen yalnızca {currentProduct.StockQuantity} adet stok kaldı.");
+                }
+
+                if (quantity <= 0)
                 {
                     items.Remove(item);
+                }
+                else
+                {
+                    item.Quantity = quantity;
                 }
                 await SaveCart();
             }

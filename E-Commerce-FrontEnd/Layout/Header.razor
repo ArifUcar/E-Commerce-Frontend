@@ -3,6 +3,7 @@
 @inject IAuthService AuthService
 @inject IProductService ProductService
 @inject ICartService CartService
+@inject IFavoriteService FavoriteService
 @using E_Commerce_FrontEnd.Models
 @using E_Commerce_FrontEnd.Services
 @implements IDisposable
@@ -94,9 +95,12 @@
                         <div class="d-flex justify-content-end gap-3">
                             <a href="/favorites" class="btn btn-outline-primary position-relative">
                                 <i class="bi bi-heart"></i>
-                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                    2
-                                </span>
+                                @if (favoriteCount > 0)
+                                {
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                        @favoriteCount
+                                    </span>
+                                }
                             </a>
                             
                             <a href="/cart" class="btn btn-outline-primary position-relative">
@@ -304,12 +308,15 @@
     private bool showSearchResults = false;
     private Timer debounceTimer;
     private int cartItemCount = 0;
+    private int favoriteCount = 0;
 
     protected override async Task OnInitializedAsync()
     {
         await LoadCategories();
         debounceTimer = new Timer(OnDebounceTimerElapsed, null, Timeout.Infinite, Timeout.Infinite);
         await UpdateCartCount();
+        await UpdateFavoriteCount();
+        FavoriteService.OnChange += StateHasChanged;
         CartService.OnChange += StateHasChanged;
     }
 
@@ -393,8 +400,15 @@
         cartItemCount = CartService.GetCartItemCount();
     }
 
+    private async Task UpdateFavoriteCount()
+    {
+        await FavoriteService.GetFavorites();
+        favoriteCount = FavoriteService.GetFavoriteCount();
+    }
+
     public void Dispose()
     {
+        FavoriteService.OnChange -= StateHasChanged;
         CartService.OnChange -= StateHasChanged;
         debounceTimer?.Dispose();
     }

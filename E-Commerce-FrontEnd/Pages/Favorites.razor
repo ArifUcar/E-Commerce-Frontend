@@ -1,0 +1,188 @@
+@page "/favorites"
+@using E_Commerce_FrontEnd.Models
+@using E_Commerce_FrontEnd.Services
+@inject IFavoriteService FavoriteService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+@inject ICartService CartService
+
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="display-6 fw-bold mb-4">Favorilerim</h2>
+        </div>
+    </div>
+
+    @if (favorites == null)
+    {
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Yükleniyor...</span>
+            </div>
+        </div>
+    }
+    else if (!favorites.Any())
+    {
+        <div class="text-center py-5">
+            <i class="bi bi-heart-break text-muted display-1"></i>
+            <h4 class="mt-3">Favori Ürününüz Bulunmuyor</h4>
+            <p class="text-muted">Beğendiğiniz ürünleri favorilerinize ekleyerek daha sonra kolayca ulaşabilirsiniz.</p>
+            <a href="/" class="btn btn-primary">
+                <i class="bi bi-arrow-left me-2"></i>Alışverişe Başla
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var item in favorites)
+            {
+                <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                    <div class="card h-100 border-0 shadow-sm product-card hover-scale">
+                        <div class="position-relative">
+                            <img src="@item.ImageUrl"
+                                 class="card-img-top"
+                                 style="height: 200px; object-fit: cover;"
+                                 alt="@item.ProductName">
+                            <div class="product-overlay">
+                                <button class="btn btn-sm btn-outline-light me-2" @onclick="() => RemoveFromFavorites(item.ProductId)">
+                                    <i class="bi bi-heart-fill text-danger"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-light" @onclick="() => ShowProductDetails(item.ProductId)">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                            @if (item.IsDiscounted)
+                            {
+                                <span class="badge bg-danger position-absolute top-0 start-0 m-3">
+                                    %@item.DiscountRate İndirim
+                                </span>
+                            }
+                        </div>
+                        <div class="card-body">
+                            <h6 class="card-title mb-2">@item.ProductName</h6>
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <div>
+                                    @if (item.IsDiscounted)
+                                    {
+                                        <span class="text-danger fw-bold">@item.DiscountedPrice?.ToString("N2") ₺</span>
+                                        <small class="text-muted text-decoration-line-through">@item.Price.ToString("N2") ₺</small>
+                                    }
+                                    else
+                                    {
+                                        <span class="fw-bold">@item.Price.ToString("N2") ₺</span>
+                                    }
+                                </div>
+                                <button class="btn btn-primary btn-sm" @onclick="() => MoveToCart(item)">
+                                    <i class="bi bi-cart-plus me-1"></i>Sepete Ekle
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="text-center mt-4">
+            <button class="btn btn-outline-danger" @onclick="ClearFavorites">
+                <i class="bi bi-trash me-2"></i>Tüm Favorileri Temizle
+            </button>
+        </div>
+    }
+</div>
+
+<style>
+    .product-card .product-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.2);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .product-card:hover .product-overlay {
+        opacity: 1;
+    }
+
+    .hover-scale {
+        transition: transform 0.3s ease;
+    }
+    
+    .hover-scale:hover {
+        transform: scale(1.05);
+    }
+</style>
+
+@code {
+    private List<FavoriteItem> favorites;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadFavorites();
+        FavoriteService.OnChange += StateHasChanged;
+    }
+
+    private async Task LoadFavorites()
+    {
+        favorites = await FavoriteService.GetFavorites();
+    }
+
+    private async Task RemoveFromFavorites(string productId)
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Bu ürünü favorilerinizden kaldırmak istediğinize emin misiniz?");
+        if (confirmed)
+        {
+            await FavoriteService.RemoveFromFavorites(productId);
+            await LoadFavorites();
+        }
+    }
+
+    private async Task ClearFavorites()
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Tüm favorilerinizi temizlemek istediğinize emin misiniz?");
+        if (confirmed)
+        {
+            await FavoriteService.ClearFavorites();
+            await LoadFavorites();
+        }
+    }
+
+    private void ShowProductDetails(string productId)
+    {
+        NavigationManager.NavigateTo($"/product/{productId}");
+    }
+
+    private async Task MoveToCart(FavoriteItem item)
+    {
+        try
+        {
+            // Ürün detaylarını Product nesnesine dönüştür
+            var product = new Product
+            {
+                Id = item.ProductId,
+                ProductName = item.ProductName,
+                Price = item.Price,
+                DiscountedPrice = item.DiscountedPrice,
+                ImagePath = item.ImageUrl
+            };
+
+            await CartService.AddToCart(product);
+            await JSRuntime.InvokeVoidAsync("alert", "Ürün sepete eklendi!");
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", ex.Message);
+        }
+    }
+
+    public void Dispose()
+    {
+        FavoriteService.OnChange -= StateHasChanged;
+    }
+} 

@@ -3,6 +3,7 @@
 @using E_Commerce_FrontEnd.Services
 @inject ICartService CartService
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
 
 <div class="container py-5">
     <div class="row">
@@ -152,9 +153,18 @@
 
     private async Task UpdateQuantity(string itemId, int quantity)
     {
-        if (quantity >= 0)
+        try
         {
-            await CartService.UpdateQuantity(itemId, quantity);
+            if (quantity >= 0)
+            {
+                await CartService.UpdateQuantity(itemId, quantity);
+                await LoadCart();
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", ex.Message);
+            // Hata durumunda sepeti yeniden yükle
             await LoadCart();
         }
     }
