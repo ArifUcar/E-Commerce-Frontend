@@ -1,0 +1,152 @@
+@page "/register"
+@using E_Commerce_FrontEnd.Models
+@using E_Commerce_FrontEnd.Services
+@inject IAuthService AuthService
+@inject NavigationManager NavigationManager
+
+<div class="container">
+    <div class="row justify-content-center py-5">
+        <div class="col-12 col-md-8 col-lg-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="text-center mb-4">
+                        <i class="bi bi-person-plus-fill text-primary display-1"></i>
+                        <h4 class="mt-3">Kayıt Ol</h4>
+                        <p class="text-muted">Yeni hesap oluşturun</p>
+                    </div>
+
+                    <EditForm Model="@registerModel" OnValidSubmit="HandleRegister">
+                        <DataAnnotationsValidator />
+
+                        @if (!string.IsNullOrEmpty(errorMessage))
+                        {
+                            <div class="alert alert-danger">
+                                @errorMessage
+                            </div>
+                        }
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Ad</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="bi bi-person"></i>
+                                    </span>
+                                    <InputText @bind-Value="registerModel.FirstName" class="form-control" placeholder="Adınız" />
+                                </div>
+                                <ValidationMessage For="@(() => registerModel.FirstName)" />
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Soyad</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="bi bi-person"></i>
+                                    </span>
+                                    <InputText @bind-Value="registerModel.LastName" class="form-control" placeholder="Soyadınız" />
+                                </div>
+                                <ValidationMessage For="@(() => registerModel.LastName)" />
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">E-posta</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="bi bi-envelope"></i>
+                                </span>
+                                <InputText @bind-Value="registerModel.Email" class="form-control" placeholder="ornek@email.com" />
+                            </div>
+                            <ValidationMessage For="@(() => registerModel.Email)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Şifre</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="bi bi-lock"></i>
+                                </span>
+                                <InputText type="password" @bind-Value="registerModel.Password" class="form-control" placeholder="••••••••" />
+                            </div>
+                            <ValidationMessage For="@(() => registerModel.Password)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Telefon</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="bi bi-phone"></i>
+                                </span>
+                                <InputText @bind-Value="registerModel.Phone" class="form-control" placeholder="(5XX) XXX XX XX" />
+                            </div>
+                            <ValidationMessage For="@(() => registerModel.Phone)" />
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">Adres</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="bi bi-geo-alt"></i>
+                                </span>
+                                <InputTextArea @bind-Value="registerModel.Address" class="form-control" rows="3" placeholder="Adresiniz..." />
+                            </div>
+                            <ValidationMessage For="@(() => registerModel.Address)" />
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100" disabled="@isLoading">
+                            @if (isLoading)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                <span>Kayıt Yapılıyor...</span>
+                            }
+                            else
+                            {
+                                <span>Kayıt Ol</span>
+                            }
+                        </button>
+                    </EditForm>
+
+                    <div class="text-center mt-4">
+                        <span class="text-muted">Zaten hesabınız var mı?</span>
+                        <a href="/login" class="text-primary text-decoration-none ms-2">Giriş Yap</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private RegisterModel registerModel = new RegisterModel();
+    private string errorMessage;
+    private bool isLoading;
+
+    private async Task HandleRegister()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = null;
+
+            var result = await AuthService.Register(registerModel);
+
+            if (result)
+            {
+                NavigationManager.NavigateTo("/login");
+            }
+            else
+            {
+                errorMessage = "Kayıt olurken bir hata oluştu. Lütfen tekrar deneyin.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "Bir hata oluştu. Lütfen tekrar deneyin.";
+            Console.WriteLine($"Register error: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+} 

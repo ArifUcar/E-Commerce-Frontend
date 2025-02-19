@@ -41,5 +41,19 @@ namespace E_Commerce_FrontEnd.Services
         {
             _isAuthenticated = false;
         }
+
+        public async Task<bool> Register(RegisterModel registerModel)
+        {
+            try
+            {
+                var response = await _httpClient.PostAsJsonAsync("api/Auth/Register", registerModel);
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Kayıt olurken hata oluştu: {ex.Message}");
+                return false;
+            }
+        }
     }
 } 
