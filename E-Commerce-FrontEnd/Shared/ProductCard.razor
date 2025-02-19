@@ -1,0 +1,107 @@
+@using E_Commerce_FrontEnd.Models
+@using E_Commerce_FrontEnd.Services
+@inject ICartService CartService
+@inject NavigationManager NavigationManager
+
+<div class="card h-100 border-0 shadow-sm product-card hover-scale">
+    <div class="position-relative">
+        <img src="@(string.IsNullOrEmpty(Product.Base64Image) ? 
+                   (string.IsNullOrEmpty(Product.ImagePath) ? "images/no-image.jpg" : Product.ImagePath) : 
+                   $"data:image/jpeg;base64,{Product.Base64Image}")" 
+             class="card-img-top" 
+             style="height: 200px; object-fit: cover;"
+             alt="@Product.ProductName">
+        <div class="product-overlay">
+            <button class="btn btn-sm btn-outline-light me-2" @onclick="AddToFavorites">
+                <i class="bi bi-heart"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-light" @onclick="ShowProductDetails">
+                <i class="bi bi-eye"></i>
+            </button>
+        </div>
+        @if (Product.IsDiscounted)
+        {
+            <span class="badge bg-danger position-absolute top-0 start-0 m-3">
+                %@Product.DiscountRate İndirim
+            </span>
+        }
+    </div>
+    <div class="card-body">
+        <h6 class="card-title mb-2">@Product.ProductName</h6>
+        <p class="text-muted small mb-2">@(Product.Description?.Length > 50 ? Product.Description.Substring(0, 47) + "..." : Product.Description)</p>
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                @if (Product.IsDiscounted)
+                {
+                    <span class="text-danger fw-bold">@Product.DiscountedPrice?.ToString("N2") ₺</span>
+                    <small class="text-muted text-decoration-line-through">@Product.Price.ToString("N2") ₺</small>
+                }
+                else
+                {
+                    <span class="fw-bold">@Product.Price.ToString("N2") ₺</span>
+                }
+            </div>
+            <div class="d-flex align-items-center">
+                <small class="text-muted me-2">Stok: @Product.StockQuantity</small>
+                <button class="btn btn-primary btn-sm" @onclick="AddToCart">
+                    <i class="bi bi-cart-plus me-1"></i>Sepete Ekle
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .product-card .product-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.2);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .product-card:hover .product-overlay {
+        opacity: 1;
+    }
+
+    .hover-scale {
+        transition: transform 0.3s ease;
+    }
+    
+    .hover-scale:hover {
+        transform: scale(1.05);
+    }
+</style>
+
+@code {
+    [Parameter]
+    public Product Product { get; set; }
+
+    private async Task AddToCart()
+    {
+        try
+        {
+            await CartService.AddToCart(Product);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ürün sepete eklenirken hata oluştu: {ex.Message}");
+        }
+    }
+
+    private void AddToFavorites()
+    {
+        // Favorilere ekleme işlemi
+    }
+
+    private void ShowProductDetails()
+    {
+        NavigationManager.NavigateTo($"/product/{Product.Id}");
+    }
+} 

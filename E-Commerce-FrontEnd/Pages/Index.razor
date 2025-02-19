@@ -1,0 +1,85 @@
+@page "/"
+@using E_Commerce_FrontEnd.Models
+@using E_Commerce_FrontEnd.Services
+@using E_Commerce_FrontEnd.Shared
+@inject IProductService ProductService
+
+<div class="container py-5">
+    <!-- Öne Çıkan Ürünler -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <h2 class="display-6 fw-bold mb-4">Öne Çıkan Ürünler</h2>
+        </div>
+        @if (featuredProducts == null)
+        {
+            <div class="text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Yükleniyor...</span>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="row g-4">
+                @foreach (var product in featuredProducts)
+                {
+                    <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                        <ProductCard Product="product" />
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    <!-- Yeni Ürünler -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <h2 class="display-6 fw-bold mb-4">Yeni Ürünler</h2>
+        </div>
+        @if (newProducts == null)
+        {
+            <div class="text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Yükleniyor...</span>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="row g-4">
+                @foreach (var product in newProducts)
+                {
+                    <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                        <ProductCard Product="product" />
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private List<Product> featuredProducts;
+    private List<Product> newProducts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProducts();
+    }
+
+    private async Task LoadProducts()
+    {
+        try
+        {
+            var allProducts = await ProductService.GetAllProducts();
+            // Örnek olarak ilk 8 ürünü öne çıkan olarak gösterelim
+            featuredProducts = allProducts.Take(8).ToList();
+            // Son 8 ürünü yeni ürünler olarak gösterelim
+            newProducts = allProducts.OrderByDescending(p => p.CreatedDate).Take(8).ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ürünler yüklenirken hata oluştu: {ex.Message}");
+        }
+    }
+} 

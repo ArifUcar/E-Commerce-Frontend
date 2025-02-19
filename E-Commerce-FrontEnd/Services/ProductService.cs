@@ -38,5 +38,40 @@ namespace E_Commerce_FrontEnd.Services
                 return null;
             }
         }
+
+        public async Task<List<Product>> GetProductsByCategory(string categoryId)
+        {
+            try
+            {
+                var response = await _httpClient.GetFromJsonAsync<List<Product>>($"api/Product/GetByCategory/{categoryId}");
+                return response ?? new List<Product>();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Kategoriye ait ürünler getirilirken hata oluştu: {ex.Message}");
+                return new List<Product>();
+            }
+        }
+
+        public async Task<List<Product>> SearchProducts(string searchTerm)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(searchTerm))
+                    return await GetAllProducts();
+
+                var allProducts = await GetAllProducts();
+                return allProducts.Where(p => 
+                    p.ProductName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                    p.Description.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                    p.CategoryName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)
+                ).ToList();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ürün araması yapılırken hata oluştu: {ex.Message}");
+                return new List<Product>();
+            }
+        }
     }
 } 

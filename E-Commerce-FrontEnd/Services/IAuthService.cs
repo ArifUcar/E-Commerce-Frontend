@@ -8,5 +8,8 @@ namespace E_Commerce_FrontEnd.Services
         Task<bool> Register(RegisterModel registerModel);
         void Logout();
         bool IsAuthenticated { get; }
+        UserInfo CurrentUser { get; }
+        string Token { get; }
+        Task InitializeAuthenticationState();
     }
 } 

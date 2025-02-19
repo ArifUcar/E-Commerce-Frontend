@@ -13,6 +13,7 @@ namespace E_Commerce_FrontEnd.Models
         public string ImagePath { get; set; }
         public string Base64Image { get; set; }
 
+        public DateTime CreatedDate { get; set; }
         // İndirim hesaplamaları için özellikler
         public bool IsDiscounted => DiscountedPrice.HasValue && DiscountedPrice < Price;
         public int? DiscountRate => IsDiscounted ? 

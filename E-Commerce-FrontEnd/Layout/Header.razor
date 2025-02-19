@@ -1,8 +1,11 @@
 @inject NavigationManager NavigationManager
 @inject ICategoryService CategoryService
 @inject IAuthService AuthService
+@inject IProductService ProductService
+@inject ICartService CartService
 @using E_Commerce_FrontEnd.Models
 @using E_Commerce_FrontEnd.Services
+@implements IDisposable
 
 <header>
     <!-- Top Bar -->
@@ -45,11 +48,46 @@
                     <div class="col-lg-6">
                         <div class="search-box">
                             <div class="input-group">
-                                <input type="text" class="form-control" placeholder="Ürün, kategori veya marka ara...">
-                                <button class="btn btn-primary px-4">
+                                <input type="text" 
+                                       class="form-control" 
+                                       placeholder="Ürün, kategori veya marka ara..."
+                                       @bind="searchTerm"
+                                       @bind:event="oninput"
+                                       @onkeyup="HandleSearch">
+                                <button class="btn btn-primary px-4" @onclick="PerformSearch">
                                     <i class="bi bi-search"></i>
                                 </button>
                             </div>
+                            @if (showSearchResults && searchResults != null && searchResults.Any())
+                            {
+                                <div class="search-results shadow-sm">
+                                    @foreach (var product in searchResults.Take(5))
+                                    {
+                                        <div class="search-item" @onclick="() => NavigateToProduct(product.Id)">
+                                            <div class="d-flex align-items-center p-2">
+                                                <img src="@(string.IsNullOrEmpty(product.Base64Image) ? 
+                                                    (string.IsNullOrEmpty(product.ImagePath) ? "images/no-image.jpg" : product.ImagePath) : 
+                                                    $"data:image/jpeg;base64,{product.Base64Image}")" 
+                                                     class="search-item-image" 
+                                                     alt="@product.ProductName">
+                                                <div class="ms-3">
+                                                    <div class="fw-bold">@product.ProductName</div>
+                                                    <div class="small text-muted">@product.CategoryName</div>
+                                                    <div class="text-primary">@product.Price.ToString("N2") ₺</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                    @if (searchResults.Count > 5)
+                                    {
+                                        <div class="p-2 text-center">
+                                            <button class="btn btn-link" @onclick="ShowAllResults">
+                                                Tüm sonuçları gör (@searchResults.Count)
+                                            </button>
+                                        </div>
+                                    }
+                                </div>
+                            }
                         </div>
                     </div>
                     <div class="col-lg-4">
@@ -63,32 +101,62 @@
                             
                             <a href="/cart" class="btn btn-outline-primary position-relative">
                                 <i class="bi bi-cart3"></i>
-                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                    3
-                                </span>
+                                @if (cartItemCount > 0)
+                                {
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                        @cartItemCount
+                                    </span>
+                                }
                             </a>
                             
                             @if (AuthService.IsAuthenticated)
                             {
                                 <div class="dropdown">
                                     <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                        <i class="bi bi-person me-1"></i>
-                                        Hesabım
+                                        <i class="bi bi-person-circle me-1"></i>
+                                        @($"{AuthService.CurrentUser?.FirstName} {AuthService.CurrentUser?.LastName}")
                                     </button>
                                     <ul class="dropdown-menu dropdown-menu-end border-0 shadow-sm">
-                                        <li><a class="dropdown-item py-2" href="/profile">
-                                            <i class="bi bi-person-circle me-2"></i>Profilim
-                                        </a></li>
-                                        <li><a class="dropdown-item py-2" href="/orders">
-                                            <i class="bi bi-bag me-2"></i>Siparişlerim
-                                        </a></li>
-                                        <li><a class="dropdown-item py-2" href="/settings">
-                                            <i class="bi bi-gear me-2"></i>Ayarlar
-                                        </a></li>
+                                        @if (AuthService.CurrentUser?.Roles?.Contains("Admin") == true)
+                                        {
+                                            <li>
+                                                <a class="dropdown-item py-2 text-primary" href="/admin">
+                                                    <i class="bi bi-speedometer2 me-2"></i>Yönetim Paneli
+                                                </a>
+                                            </li>
+                                            <li><hr class="dropdown-divider"></li>
+                                        }
+                                        <li>
+                                            <a class="dropdown-item py-2" href="/profile">
+                                                <i class="bi bi-person me-2"></i>Profilim
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item py-2" href="/orders">
+                                                <i class="bi bi-bag me-2"></i>Siparişlerim
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item py-2" href="/addresses">
+                                                <i class="bi bi-geo-alt me-2"></i>Adreslerim
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item py-2" href="/favorites">
+                                                <i class="bi bi-heart me-2"></i>Favorilerim
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item py-2" href="/settings">
+                                                <i class="bi bi-gear me-2"></i>Ayarlar
+                                            </a>
+                                        </li>
                                         <li><hr class="dropdown-divider"></li>
-                                        <li><button class="dropdown-item py-2 text-danger" @onclick="Logout">
-                                            <i class="bi bi-box-arrow-right me-2"></i>Çıkış Yap
-                                        </button></li>
+                                        <li>
+                                            <button class="dropdown-item py-2 text-danger" @onclick="Logout">
+                                                <i class="bi bi-box-arrow-right me-2"></i>Çıkış Yap
+                                            </button>
+                                        </li>
                                     </ul>
                                 </div>
                             }
@@ -194,14 +262,55 @@
             margin: 1rem 0;
         }
     }
+
+    .search-results {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border-radius: 0.5rem;
+        border: 1px solid #dee2e6;
+        z-index: 1000;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .search-item {
+        cursor: pointer;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .search-item:hover {
+        background-color: #f8f9fa;
+    }
+
+    .search-item:last-child {
+        border-bottom: none;
+    }
+
+    .search-item-image {
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+        border-radius: 0.25rem;
+    }
 </style>
 
 @code {
     private List<Category> categories;
+    private string searchTerm = "";
+    private List<Product> searchResults;
+    private bool showSearchResults = false;
+    private Timer debounceTimer;
+    private int cartItemCount = 0;
 
     protected override async Task OnInitializedAsync()
     {
         await LoadCategories();
+        debounceTimer = new Timer(OnDebounceTimerElapsed, null, Timeout.Infinite, Timeout.Infinite);
+        await UpdateCartCount();
+        CartService.OnChange += StateHasChanged;
     }
 
     private async Task LoadCategories()
@@ -221,5 +330,72 @@
     {
         AuthService.Logout();
         NavigationManager.NavigateTo("/");
+    }
+
+    private async Task HandleSearch(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await PerformSearch();
+            return;
+        }
+
+        // Reset and start timer
+        debounceTimer.Change(300, Timeout.Infinite);
+    }
+
+    private void OnDebounceTimerElapsed(object state)
+    {
+        InvokeAsync(async () =>
+        {
+            if (!string.IsNullOrWhiteSpace(searchTerm) && searchTerm.Length >= 2)
+            {
+                searchResults = await ProductService.SearchProducts(searchTerm);
+                showSearchResults = true;
+            }
+            else
+            {
+                showSearchResults = false;
+            }
+            StateHasChanged();
+        });
+    }
+
+    private async Task PerformSearch()
+    {
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            searchResults = await ProductService.SearchProducts(searchTerm);
+            NavigateToSearchResults();
+        }
+    }
+
+    private void NavigateToProduct(string productId)
+    {
+        showSearchResults = false;
+        NavigationManager.NavigateTo($"/product/{productId}");
+    }
+
+    private void NavigateToSearchResults()
+    {
+        showSearchResults = false;
+        NavigationManager.NavigateTo($"/search?q={Uri.EscapeDataString(searchTerm)}");
+    }
+
+    private void ShowAllResults()
+    {
+        NavigateToSearchResults();
+    }
+
+    private async Task UpdateCartCount()
+    {
+        await CartService.GetCartItems();
+        cartItemCount = CartService.GetCartItemCount();
+    }
+
+    public void Dispose()
+    {
+        CartService.OnChange -= StateHasChanged;
+        debounceTimer?.Dispose();
     }
 } 
