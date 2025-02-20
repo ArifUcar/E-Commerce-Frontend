@@ -1,0 +1,394 @@
+@page "/admin/products"
+@layout E_Commerce_FrontEnd.Shared.AdminLayout
+@inject IProductService ProductService
+@inject ICategoryService CategoryService
+@inject IJSRuntime JSRuntime
+@using E_Commerce_FrontEnd.Models
+@using E_Commerce_FrontEnd.Services
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">Ürün Yönetimi</h4>
+    <button class="btn btn-primary" @onclick="() => ShowAddProductModal()">
+        <i class="bi bi-plus"></i> Yeni Ürün Ekle
+    </button>
+</div>
+
+@if (products == null)
+{
+    <div class="text-center p-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Yükleniyor...</span>
+        </div>
+    </div>
+}
+else if (!products.Any())
+{
+    <div class="alert alert-info">
+        Henüz ürün bulunmamaktadır.
+    </div>
+}
+else
+{
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Görsel</th>
+                            <th>Ürün Adı</th>
+                            <th>Kategori</th>
+                            <th>Fiyat</th>
+                            <th>Stok</th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var product in products)
+                        {
+                            <tr>
+                                <td>
+                                    <img src="@(string.IsNullOrEmpty(product.Base64Image) ? 
+                                        (string.IsNullOrEmpty(product.ImagePath) ? "images/no-image.jpg" : product.ImagePath) : 
+                                        $"data:image/jpeg;base64,{product.Base64Image}")" 
+                                         class="product-image" alt="@product.ProductName">
+                                </td>
+                                <td>@product.ProductName</td>
+                                <td>@product.CategoryName</td>
+                                <td>@product.Price.ToString("N2") ₺</td>
+                                <td>
+                                    <span class="badge bg-@(product.StockQuantity > 10 ? "success" : "danger")">
+                                        @product.StockQuantity
+                                    </span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary me-2" @onclick="() => ShowEditProductModal(product)">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" @onclick="() => DeleteProduct(product.Id)">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Ürün Ekleme/Düzenleme Modal -->
+@if (showModal)
+{
+    <div class="modal fade show" style="display: block;" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(editingProduct == null ? "Yeni Ürün Ekle" : "Ürün Düzenle")</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="@productModel" OnValidSubmit="HandleValidSubmit">
+                        <DataAnnotationsValidator />
+
+                        <div class="row">
+                            <!-- Temel Bilgiler -->
+                            <div class="col-md-6">
+                                <h6 class="mb-3">Temel Bilgiler</h6>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Ürün Adı</label>
+                                    <InputText @bind-Value="productModel.ProductName" class="form-control" />
+                                    <ValidationMessage For="@(() => productModel.ProductName)" />
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Açıklama</label>
+                                    <InputTextArea @bind-Value="productModel.Description" class="form-control" rows="3" />
+                                    <ValidationMessage For="@(() => productModel.Description)" />
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Kategori</label>
+                                    <InputSelect @bind-Value="productModel.CategoryId" class="form-select">
+                                        <option value="">Kategori Seçin</option>
+                                        @if (categories != null)
+                                        {
+                                            @foreach (var category in categories)
+                                            {
+                                                <option value="@category.Id">@category.CategoryName</option>
+                                            }
+                                        }
+                                    </InputSelect>
+                                    <ValidationMessage For="@(() => productModel.CategoryId)" />
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Fiyat</label>
+                                            <InputNumber @bind-Value="productModel.Price" class="form-control" />
+                                            <ValidationMessage For="@(() => productModel.Price)" />
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Stok Miktarı</label>
+                                            <InputNumber @bind-Value="productModel.StockQuantity" class="form-control" />
+                                            <ValidationMessage For="@(() => productModel.StockQuantity)" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Ürün Görseli</label>
+                                    <InputFile OnChange="HandleFileSelected" class="form-control" accept="image/*" />
+                                </div>
+
+                                @if (!string.IsNullOrEmpty(productModel.Base64Image))
+                                {
+                                    <div class="mb-3">
+                                        <img src="data:image/jpeg;base64,@productModel.Base64Image" 
+                                             class="img-thumbnail" style="max-height: 200px;" />
+                                    </div>
+                                }
+                            </div>
+
+                            <!-- Detay Bilgileri -->
+                            <div class="col-md-6">
+                                <h6 class="mb-3">Detay Bilgileri</h6>
+
+                                <div class="row">
+                                    <div class="col-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Marka</label>
+                                            <InputText @bind-Value="productModel.Brand" class="form-control" />
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Model</label>
+                                            <InputText @bind-Value="productModel.Model" class="form-control" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Renk</label>
+                                            <InputText @bind-Value="productModel.Color" class="form-control" />
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Boyut</label>
+                                            <InputText @bind-Value="productModel.Size" class="form-control" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Malzeme</label>
+                                    <InputText @bind-Value="productModel.Material" class="form-control" />
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Garanti</label>
+                                    <InputText @bind-Value="productModel.Warranty" class="form-control" />
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Özellikler</label>
+                                    <InputTextArea @bind-Value="productModel.Specifications" class="form-control" rows="2" />
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Ek Bilgiler</label>
+                                    <InputTextArea @bind-Value="productModel.AdditionalInformation" class="form-control" rows="2" />
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Ağırlık</label>
+                                            <InputNumber @bind-Value="productModel.Weight" class="form-control" />
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Ağırlık Birimi</label>
+                                            <InputText @bind-Value="productModel.WeightUnit" class="form-control" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">Boyutlar</label>
+                                    <InputText @bind-Value="productModel.Dimensions" class="form-control" />
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Stok Kodu</label>
+                                            <InputNumber @bind-Value="productModel.StockCode" class="form-control" />
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">Barkod</label>
+                                            <InputText @bind-Value="productModel.Barcode" class="form-control" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" @onclick="CloseModal">İptal</button>
+                            <button type="submit" class="btn btn-primary">
+                                @if (loading)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2"></span>
+                                }
+                                Kaydet
+                            </button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+<style>
+    .product-image {
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+        border-radius: 4px;
+    }
+</style>
+
+@code {
+    private List<Product> products;
+    private List<Category> categories;
+    private bool showModal;
+    private bool loading;
+    private Product editingProduct;
+    private ProductCreateModel productModel = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        products = await ProductService.GetAllProducts();
+        categories = await CategoryService.GetAllCategories();
+    }
+
+    private void ShowAddProductModal()
+    {
+        editingProduct = null;
+        productModel = new ProductCreateModel();
+        showModal = true;
+    }
+
+    private void ShowEditProductModal(Product product)
+    {
+        editingProduct = product;
+        productModel = new ProductCreateModel
+        {
+            ProductName = product.ProductName,
+            Description = product.Description,
+            Price = product.Price,
+            StockQuantity = product.StockQuantity,
+            CategoryId = product.CategoryId,
+            Base64Image = product.Base64Image,
+            CreatedDate = product.CreatedDate,
+            Brand = product.ProductDetail?.Brand,
+            Model = product.ProductDetail?.Model,
+            Color = product.ProductDetail?.Color,
+            Size = product.ProductDetail?.Size,
+            Material = product.ProductDetail?.Material,
+            Warranty = product.ProductDetail?.Warranty,
+            Specifications = product.ProductDetail?.Specifications,
+            AdditionalInformation = product.ProductDetail?.AdditionalInformation,
+            Weight = product.ProductDetail?.Weight ?? 0,
+            WeightUnit = product.ProductDetail?.WeightUnit,
+            Dimensions = product.ProductDetail?.Dimensions,
+            StockCode = product.ProductDetail?.StockCode ?? 0,
+            Barcode = product.ProductDetail?.Barcode
+        };
+        showModal = true;
+    }
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file != null)
+        {
+            var buffer = new byte[file.Size];
+            await file.OpenReadStream().ReadAsync(buffer);
+            productModel.Base64Image = Convert.ToBase64String(buffer);
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        loading = true;
+        bool success;
+
+        if (editingProduct == null)
+        {
+            success = await ProductService.AddProduct(productModel);
+        }
+        else
+        {
+            success = await ProductService.UpdateProduct(editingProduct.Id, productModel);
+        }
+
+        if (success)
+        {
+            await LoadData();
+            CloseModal();
+            await JSRuntime.InvokeVoidAsync("alert", 
+                editingProduct == null ? "Ürün başarıyla eklendi." : "Ürün başarıyla güncellendi.");
+        }
+        else
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Bir hata oluştu!");
+        }
+
+        loading = false;
+    }
+
+    private async Task DeleteProduct(string id)
+    {
+        if (await JSRuntime.InvokeAsync<bool>("confirm", "Bu ürünü silmek istediğinize emin misiniz?"))
+        {
+            var success = await ProductService.DeleteProduct(id);
+            if (success)
+            {
+                await LoadData();
+                await JSRuntime.InvokeVoidAsync("alert", "Ürün başarıyla silindi.");
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Ürün silinirken bir hata oluştu!");
+            }
+        }
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+        productModel = new ProductCreateModel();
+        editingProduct = null;
+    }
+} 

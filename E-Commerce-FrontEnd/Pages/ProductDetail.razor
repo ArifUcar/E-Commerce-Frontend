@@ -1,0 +1,242 @@
+@page "/product/{productId}"
+@using E_Commerce_FrontEnd.Models
+@using E_Commerce_FrontEnd.Services
+@inject IProductService ProductService
+@inject ICartService CartService
+@inject IFavoriteService FavoriteService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+
+<div class="container py-4">
+    @if (product == null)
+    {
+        <div class="text-center p-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Yükleniyor...</span>
+            </div>
+        </div>
+    }
+    else
+    {
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Ana Sayfa</a></li>
+                <li class="breadcrumb-item">
+                    <a href="/category/@product.CategoryId">@product.CategoryName</a>
+                </li>
+                <li class="breadcrumb-item active">@product.ProductName</li>
+            </ol>
+        </nav>
+
+        <div class="row">
+            <!-- Ürün Görseli -->
+            <div class="col-md-6 mb-4">
+                <div class="card border-0 shadow-sm">
+                    <img src="@(string.IsNullOrEmpty(product.Base64Image) ? 
+                        (string.IsNullOrEmpty(product.ImagePath) ? "images/no-image.jpg" : product.ImagePath) : 
+                        $"data:image/jpeg;base64,{product.Base64Image}")" 
+                         class="card-img-top product-image" alt="@product.ProductName">
+                </div>
+            </div>
+
+            <!-- Ürün Bilgileri -->
+            <div class="col-md-6 mb-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h4 class="mb-3">@product.ProductName</h4>
+                        <p class="text-muted mb-4">@product.Description</p>
+
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h3 class="text-primary mb-0">@product.Price.ToString("N2") ₺</h3>
+                            <span class="badge bg-@(product.StockQuantity > 10 ? "success" : "danger")">
+                                Stok: @product.StockQuantity
+                            </span>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            @if (product.StockQuantity > 0)
+                            {
+                                <button class="btn btn-primary flex-grow-1" @onclick="AddToCart">
+                                    <i class="bi bi-cart-plus me-2"></i>Sepete Ekle
+                                </button>
+                            }
+                            else
+                            {
+                                <button class="btn btn-secondary flex-grow-1" disabled>
+                                    <i class="bi bi-x-circle me-2"></i>Stokta Yok
+                                </button>
+                            }
+                            <button class="btn @(IsFavorite ? "btn-danger" : "btn-outline-danger")" 
+                                    @onclick="ToggleFavorite">
+                                <i class="bi @(IsFavorite ? "bi-heart-fill" : "bi-heart")"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ürün Detayları -->
+            <div class="col-12">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="mb-4">Ürün Detayları</h5>
+                        <div class="row g-4">
+                            @if (!string.IsNullOrEmpty(product.ProductDetail?.Brand))
+                            {
+                                <div class="col-md-4">
+                                    <div class="detail-item">
+                                        <small class="text-muted d-block">Marka</small>
+                                        <span>@product.ProductDetail.Brand</span>
+                                    </div>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(product.ProductDetail?.Model))
+                            {
+                                <div class="col-md-4">
+                                    <div class="detail-item">
+                                        <small class="text-muted d-block">Model</small>
+                                        <span>@product.ProductDetail.Model</span>
+                                    </div>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(product.ProductDetail?.Color))
+                            {
+                                <div class="col-md-4">
+                                    <div class="detail-item">
+                                        <small class="text-muted d-block">Renk</small>
+                                        <span>@product.ProductDetail.Color</span>
+                                    </div>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(product.ProductDetail?.Size))
+                            {
+                                <div class="col-md-4">
+                                    <div class="detail-item">
+                                        <small class="text-muted d-block">Boyut</small>
+                                        <span>@product.ProductDetail.Size</span>
+                                    </div>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(product.ProductDetail?.Material))
+                            {
+                                <div class="col-md-4">
+                                    <div class="detail-item">
+                                        <small class="text-muted d-block">Malzeme</small>
+                                        <span>@product.ProductDetail.Material</span>
+                                    </div>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(product.ProductDetail?.Warranty))
+                            {
+                                <div class="col-md-4">
+                                    <div class="detail-item">
+                                        <small class="text-muted d-block">Garanti</small>
+                                        <span>@product.ProductDetail.Warranty</span>
+                                    </div>
+                                </div>
+                            }
+                            @if (product.ProductDetail?.Weight != null)
+                            {
+                                <div class="col-md-4">
+                                    <div class="detail-item">
+                                        <small class="text-muted d-block">Ağırlık</small>
+                                        <span>@product.ProductDetail.Weight @product.ProductDetail.WeightUnit</span>
+                                    </div>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(product.ProductDetail?.Dimensions))
+                            {
+                                <div class="col-md-4">
+                                    <div class="detail-item">
+                                        <small class="text-muted d-block">Boyutlar</small>
+                                        <span>@product.ProductDetail.Dimensions</span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(product.ProductDetail?.Specifications))
+                        {
+                            <div class="mt-4">
+                                <h6>Teknik Özellikler</h6>
+                                <p class="mb-0">@product.ProductDetail.Specifications</p>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrEmpty(product.ProductDetail?.AdditionalInformation))
+                        {
+                            <div class="mt-4">
+                                <h6>Ek Bilgiler</h6>
+                                <p class="mb-0">@product.ProductDetail.AdditionalInformation</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .product-image {
+        max-height: 500px;
+        object-fit: contain;
+        background-color: #f8f9fa;
+    }
+
+    .detail-item {
+        padding: 1rem;
+        background-color: #f8f9fa;
+        border-radius: 0.5rem;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public string ProductId { get; set; }
+
+    private Product product;
+    private bool IsFavorite => FavoriteService.IsFavorite(ProductId);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProduct();
+    }
+
+    private async Task LoadProduct()
+    {
+        if (!string.IsNullOrEmpty(ProductId))
+        {
+            product = await ProductService.GetProductById(ProductId);
+            if (product == null)
+            {
+                NavigationManager.NavigateTo("/");
+            }
+        }
+    }
+
+    private async Task AddToCart()
+    {
+        try
+        {
+            await CartService.AddToCart(product);
+            await JSRuntime.InvokeVoidAsync("alert", "Ürün sepete eklendi!");
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Ürün sepete eklenirken bir hata oluştu!");
+        }
+    }
+
+    private async Task ToggleFavorite()
+    {
+        if (IsFavorite)
+        {
+            await FavoriteService.RemoveFromFavorites(ProductId);
+        }
+        else
+        {
+            await FavoriteService.AddToFavorites(product);
+        }
+    }
+} 

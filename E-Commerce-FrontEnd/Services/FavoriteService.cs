@@ -42,10 +42,11 @@ namespace E_Commerce_FrontEnd.Services
                         ? $"data:image/jpeg;base64,{product.Base64Image}"
                         : product.ImagePath,
                     Price = product.Price,
-                    DiscountedPrice = product.DiscountedPrice
+               
                 });
                 await SaveFavorites();
             }
+            OnChange?.Invoke();
         }
 
         public async Task RemoveFromFavorites(string productId)
@@ -57,6 +58,7 @@ namespace E_Commerce_FrontEnd.Services
                 favorites.Remove(item);
                 await SaveFavorites();
             }
+            OnChange?.Invoke();
         }
 
         public async Task ClearFavorites()

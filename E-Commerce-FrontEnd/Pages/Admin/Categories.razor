@@ -1,0 +1,187 @@
+@page "/admin/categories"
+@layout E_Commerce_FrontEnd.Shared.AdminLayout
+@inject ICategoryService CategoryService
+@inject IJSRuntime JSRuntime
+@using E_Commerce_FrontEnd.Models
+@using E_Commerce_FrontEnd.Services
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">Kategori Yönetimi</h4>
+    <button class="btn btn-primary" @onclick="() => ShowAddCategoryModal()">
+        <i class="bi bi-plus"></i> Yeni Kategori Ekle
+    </button>
+</div>
+
+@if (categories == null)
+{
+    <div class="text-center p-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Yükleniyor...</span>
+        </div>
+    </div>
+}
+else if (!categories.Any())
+{
+    <div class="alert alert-info">
+        Henüz kategori bulunmamaktadır.
+    </div>
+}
+else
+{
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Kategori Adı</th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var category in categories)
+                        {
+                            <tr>
+                                <td>@category.CategoryName</td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary me-2" @onclick="() => ShowEditCategoryModal(category)">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" @onclick="() => DeleteCategory(category.Id)">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Kategori Ekleme/Düzenleme Modal -->
+@if (showModal)
+{
+    <div class="modal fade show" style="display: block;" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(editingCategory == null ? "Yeni Kategori Ekle" : "Kategori Düzenle")</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="@categoryModel" OnValidSubmit="HandleValidSubmit">
+                        <DataAnnotationsValidator />
+
+                        <div class="mb-3">
+                            <label class="form-label">Kategori Adı</label>
+                            <InputText @bind-Value="categoryModel.CategoryName" class="form-control" />
+                            <ValidationMessage For="@(() => categoryModel.CategoryName)" />
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" @onclick="CloseModal">İptal</button>
+                            <button type="submit" class="btn btn-primary">
+                                @if (loading)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2"></span>
+                                }
+                                Kaydet
+                            </button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    private List<Category> categories;
+    private bool showModal;
+    private bool loading;
+    private Category editingCategory;
+    private CategoryCreateModel categoryModel = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        categories = await CategoryService.GetAllCategories();
+    }
+
+    private void ShowAddCategoryModal()
+    {
+        editingCategory = null;
+        categoryModel = new CategoryCreateModel();
+        showModal = true;
+    }
+
+    private void ShowEditCategoryModal(Category category)
+    {
+        editingCategory = category;
+        categoryModel = new CategoryCreateModel
+        {
+            CategoryName = category.CategoryName
+        };
+        showModal = true;
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        loading = true;
+        bool success;
+
+        if (editingCategory == null)
+        {
+            success = await CategoryService.CreateCategory(categoryModel);
+        }
+        else
+        {
+            success = await CategoryService.UpdateCategory(editingCategory.Id, categoryModel);
+        }
+
+        if (success)
+        {
+            await LoadData();
+            CloseModal();
+            await JSRuntime.InvokeVoidAsync("alert", 
+                editingCategory == null ? "Kategori başarıyla eklendi." : "Kategori başarıyla güncellendi.");
+        }
+        else
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Bir hata oluştu!");
+        }
+
+        loading = false;
+    }
+
+    private async Task DeleteCategory(string id)
+    {
+        if (await JSRuntime.InvokeAsync<bool>("confirm", "Bu kategoriyi silmek istediğinize emin misiniz?"))
+        {
+            var success = await CategoryService.DeleteCategory(id);
+            if (success)
+            {
+                await LoadData();
+                await JSRuntime.InvokeVoidAsync("alert", "Kategori başarıyla silindi.");
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Kategori silinirken bir hata oluştu!");
+            }
+        }
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+        categoryModel = new CategoryCreateModel();
+        editingCategory = null;
+    }
+} 

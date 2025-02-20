@@ -3,12 +3,47 @@
 @using E_Commerce_FrontEnd.Services
 @using E_Commerce_FrontEnd.Shared
 @inject IProductService ProductService
+@inject ICategoryService CategoryService
+@inject NavigationManager NavigationManager
 
-<div class="container py-5">
+<div class="container py-4">
+    <!-- Kategoriler -->
+    @if (categories == null)
+    {
+        <div class="text-center p-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Yükleniyor...</span>
+            </div>
+        </div>
+    }
+    else if (!categories.Any())
+    {
+        <div class="alert alert-info">
+            Henüz kategori bulunmamaktadır.
+        </div>
+    }
+    else
+    {
+        <h5 class="mb-3">Kategoriler</h5>
+        <div class="row g-4 mb-5">
+            @foreach (var category in categories)
+            {
+                <div class="col-6 col-md-4 col-lg-3">
+                    <div class="card h-100 border-0 shadow-sm category-card" 
+                         @onclick="() => NavigateToCategory(category.Id)">
+                        <div class="card-body text-center">
+                            <h6 class="card-title mb-0">@category.CategoryName</h6>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
     <!-- Öne Çıkan Ürünler -->
     <div class="row mb-5">
         <div class="col-12">
-            <h2 class="display-6 fw-bold mb-4">Öne Çıkan Ürünler</h2>
+            <h5 class="mb-3">Öne Çıkan Ürünler</h5>
         </div>
         @if (featuredProducts == null)
         {
@@ -24,7 +59,7 @@
                 @foreach (var product in featuredProducts)
                 {
                     <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-                        <ProductCard Product="product" />
+                        <ProductCard Product="product" OnProductClick="@(p => NavigateToProduct(p.Id))" />
                     </div>
                 }
             </div>
@@ -34,7 +69,7 @@
     <!-- Yeni Ürünler -->
     <div class="row mb-5">
         <div class="col-12">
-            <h2 class="display-6 fw-bold mb-4">Yeni Ürünler</h2>
+            <h5 class="mb-3">Yeni Ürünler</h5>
         </div>
         @if (newProducts == null)
         {
@@ -50,7 +85,7 @@
                 @foreach (var product in newProducts)
                 {
                     <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-                        <ProductCard Product="product" />
+                        <ProductCard Product="product" OnProductClick="@(p => NavigateToProduct(p.Id))" />
                     </div>
                 }
             </div>
@@ -58,28 +93,45 @@
     </div>
 </div>
 
+<style>
+    .category-card {
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+
+    .category-card:hover {
+        transform: translateY(-5px);
+    }
+</style>
+
 @code {
+    private List<Category> categories;
     private List<Product> featuredProducts;
     private List<Product> newProducts;
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadProducts();
+        await LoadData();
     }
 
-    private async Task LoadProducts()
+    private async Task LoadData()
     {
-        try
-        {
-            var allProducts = await ProductService.GetAllProducts();
-            // Örnek olarak ilk 8 ürünü öne çıkan olarak gösterelim
-            featuredProducts = allProducts.Take(8).ToList();
-            // Son 8 ürünü yeni ürünler olarak gösterelim
-            newProducts = allProducts.OrderByDescending(p => p.CreatedDate).Take(8).ToList();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Ürünler yüklenirken hata oluştu: {ex.Message}");
-        }
+        categories = await CategoryService.GetAllCategories();
+        var allProducts = await ProductService.GetAllProducts();
+        
+        // Örnek olarak ilk 8 ürünü öne çıkan olarak gösterelim
+        featuredProducts = allProducts.Take(8).ToList();
+        // Son 8 ürünü yeni ürünler olarak gösterelim
+        newProducts = allProducts.OrderByDescending(p => p.CreatedDate).Take(8).ToList();
+    }
+
+    private void NavigateToCategory(string categoryId)
+    {
+        NavigationManager.NavigateTo($"/category/{categoryId}");
+    }
+
+    private void NavigateToProduct(string productId)
+    {
+        NavigationManager.NavigateTo($"/product/{productId}");
     }
 } 

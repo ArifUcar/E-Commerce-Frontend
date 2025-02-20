@@ -94,7 +94,14 @@
 
             if (result)
             {
-                NavigationManager.NavigateTo("/");
+                if (AuthService.CurrentUser?.Roles?.Contains("Admin") == true)
+                {
+                    NavigationManager.NavigateTo("/admin");
+                }
+                else
+                {
+                    NavigationManager.NavigateTo("/");
+                }
             }
             else
             {

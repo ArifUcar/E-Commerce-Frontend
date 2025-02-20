@@ -73,6 +73,7 @@ namespace E_Commerce_FrontEnd.Services
             }
 
             await SaveCart();
+            OnChange?.Invoke();
         }
 
         public async Task UpdateQuantity(string cartItemId, int quantity)
@@ -103,6 +104,7 @@ namespace E_Commerce_FrontEnd.Services
                 }
                 await SaveCart();
             }
+            OnChange?.Invoke();
         }
 
         public async Task RemoveFromCart(string cartItemId)
@@ -115,12 +117,14 @@ namespace E_Commerce_FrontEnd.Services
                 items.Remove(item);
                 await SaveCart();
             }
+            OnChange?.Invoke();
         }
 
         public async Task ClearCart()
         {
             _cartItems = new List<CartItem>();
             await SaveCart();
+            OnChange?.Invoke();
         }
 
         private async Task SaveCart()

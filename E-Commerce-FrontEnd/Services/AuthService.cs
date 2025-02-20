@@ -1,6 +1,7 @@
 using E_Commerce_FrontEnd.Models;
 using System.Net.Http.Json;
 using Microsoft.JSInterop;
+using System;
 
 namespace E_Commerce_FrontEnd.Services
 {
@@ -11,6 +12,8 @@ namespace E_Commerce_FrontEnd.Services
         private bool _isAuthenticated;
         private AuthResponse _authData;
         private const string AUTH_DATA_KEY = "auth_data";
+
+        public event Action OnAuthenticationChanged;
 
         public AuthService(HttpClient httpClient, IJSRuntime jsRuntime)
         {
@@ -36,6 +39,9 @@ namespace E_Commerce_FrontEnd.Services
                     {
                         _isAuthenticated = true;
                         await SaveAuthDataToLocalStorage();
+                        OnAuthenticationChanged?.Invoke();
+
+                        // Admin rolü kontrolü ve yönlendirme için true değerini döndür
                         return true;
                     }
                 }
@@ -49,11 +55,12 @@ namespace E_Commerce_FrontEnd.Services
             }
         }
 
-        public async void Logout()
+        public void Logout()
         {
             _isAuthenticated = false;
             _authData = null;
-            await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", AUTH_DATA_KEY);
+            OnAuthenticationChanged?.Invoke();
+            _jsRuntime.InvokeVoidAsync("localStorage.removeItem", AUTH_DATA_KEY);
         }
 
         private async Task SaveAuthDataToLocalStorage()

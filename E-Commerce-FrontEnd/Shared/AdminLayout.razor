@@ -1,0 +1,161 @@
+@using E_Commerce_FrontEnd.Services
+@inherits LayoutComponentBase
+@inject NavigationManager NavigationManager
+@inject IAuthService AuthService
+
+@if (IsAdmin)
+{
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <div class="sidebar bg-dark text-white">
+            <div class="sidebar-header p-3">
+                <h5 class="mb-0">Admin Panel</h5>
+            </div>
+            <div class="sidebar-menu">
+                <NavLink class="sidebar-item" href="/admin" Match="NavLinkMatch.All">
+                    <i class="bi bi-speedometer2 me-2"></i> Dashboard
+                </NavLink>
+                <NavLink class="sidebar-item" href="/admin/products">
+                    <i class="bi bi-box me-2"></i> Ürünler
+                </NavLink>
+                <NavLink class="sidebar-item" href="/admin/categories">
+                    <i class="bi bi-tags me-2"></i> Kategoriler
+                </NavLink>
+                <NavLink class="sidebar-item" href="/admin/orders">
+                    <i class="bi bi-cart3 me-2"></i> Siparişler
+                </NavLink>
+                <NavLink class="sidebar-item" href="/admin/users">
+                    <i class="bi bi-people me-2"></i> Kullanıcılar
+                </NavLink>
+                <NavLink class="sidebar-item" href="/admin/settings">
+                    <i class="bi bi-gear me-2"></i> Ayarlar
+                </NavLink>
+                <div class="sidebar-item" @onclick="GoToHome">
+                    <i class="bi bi-house me-2"></i> Siteye Dön
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Topbar -->
+            <div class="topbar bg-white border-bottom p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">@PageTitle</h4>
+                    <div class="d-flex align-items-center">
+                        <span class="me-3">@($"{AuthService.CurrentUser?.FirstName} {AuthService.CurrentUser?.LastName}")</span>
+                        <button class="btn btn-outline-danger btn-sm" @onclick="Logout">
+                            <i class="bi bi-box-arrow-right"></i> Çıkış
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Page Content -->
+            <div class="content p-4">
+                @Body
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="d-flex align-items-center justify-content-center min-vh-100">
+        <div class="text-center">
+            <h3>Yetkisiz Erişim</h3>
+            <p>Bu sayfaya erişim yetkiniz bulunmamaktadır.</p>
+            <button class="btn btn-primary" @onclick="GoToHome">Ana Sayfaya Dön</button>
+        </div>
+    </div>
+}
+
+<style>
+    .admin-layout {
+        display: flex;
+        min-height: 100vh;
+    }
+
+    .sidebar {
+        width: 250px;
+        flex-shrink: 0;
+    }
+
+    .sidebar-header {
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .sidebar-menu {
+        padding: 1rem 0;
+    }
+
+    .sidebar-item {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem 1.5rem;
+        color: rgba(255,255,255,0.8);
+        text-decoration: none;
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+
+    .sidebar-item:hover {
+        color: white;
+        background-color: rgba(255,255,255,0.1);
+    }
+
+    .sidebar-item.active {
+        color: white;
+        background-color: var(--bs-primary);
+    }
+
+    .main-content {
+        flex-grow: 1;
+        background-color: #f8f9fa;
+    }
+
+    .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+    }
+
+    .content {
+        min-height: calc(100vh - 70px);
+    }
+</style>
+
+@code {
+    private bool IsAdmin => AuthService.CurrentUser?.Roles?.Contains("Admin") == true;
+    private string PageTitle => GetPageTitle();
+
+    protected override void OnInitialized()
+    {
+        if (!IsAdmin)
+        {
+            NavigationManager.NavigateTo("/");
+        }
+    }
+
+    private string GetPageTitle()
+    {
+        var path = NavigationManager.Uri.ToLower();
+        if (path.EndsWith("/admin")) return "Dashboard";
+        if (path.Contains("/products")) return "Ürünler";
+        if (path.Contains("/categories")) return "Kategoriler";
+        if (path.Contains("/orders")) return "Siparişler";
+        if (path.Contains("/users")) return "Kullanıcılar";
+        if (path.Contains("/settings")) return "Ayarlar";
+        return "Admin Panel";
+    }
+
+    private void GoToHome()
+    {
+        NavigationManager.NavigateTo("/");
+    }
+
+    private void Logout()
+    {
+        AuthService.Logout();
+        NavigationManager.NavigateTo("/");
+    }
+} 

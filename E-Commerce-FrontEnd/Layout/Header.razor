@@ -316,8 +316,11 @@
         debounceTimer = new Timer(OnDebounceTimerElapsed, null, Timeout.Infinite, Timeout.Infinite);
         await UpdateCartCount();
         await UpdateFavoriteCount();
-        FavoriteService.OnChange += StateHasChanged;
-        CartService.OnChange += StateHasChanged;
+        
+        // Event'leri dinle
+        FavoriteService.OnChange += HandleFavoriteChange;
+        CartService.OnChange += HandleCartChange;
+        AuthService.OnAuthenticationChanged += StateHasChanged;
     }
 
     private async Task LoadCategories()
@@ -406,10 +409,23 @@
         favoriteCount = FavoriteService.GetFavoriteCount();
     }
 
+    private async void HandleFavoriteChange()
+    {
+        await UpdateFavoriteCount();
+        StateHasChanged();
+    }
+
+    private async void HandleCartChange()
+    {
+        await UpdateCartCount();
+        StateHasChanged();
+    }
+
     public void Dispose()
     {
-        FavoriteService.OnChange -= StateHasChanged;
-        CartService.OnChange -= StateHasChanged;
+        FavoriteService.OnChange -= HandleFavoriteChange;
+        CartService.OnChange -= HandleCartChange;
+        AuthService.OnAuthenticationChanged -= StateHasChanged;
         debounceTimer?.Dispose();
     }
 } 

@@ -38,5 +38,47 @@ namespace E_Commerce_FrontEnd.Services
                 return null;
             }
         }
+
+        public async Task<bool> CreateCategory(CategoryCreateModel category)
+        {
+            try
+            {
+                var response = await _httpClient.PostAsJsonAsync("api/Categories/CreateCategory", new { categoryName = category.CategoryName });
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Kategori eklenirken hata oluştu: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<bool> UpdateCategory(string id, CategoryCreateModel category)
+        {
+            try
+            {
+                var response = await _httpClient.PutAsJsonAsync($"api/Categories/UpdateCategory/{id}", new { categoryName = category.CategoryName });
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Kategori güncellenirken hata oluştu: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<bool> DeleteCategory(string id)
+        {
+            try
+            {
+                var response = await _httpClient.DeleteAsync($"api/Categories/DeleteCategory/{id}");
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Kategori silinirken hata oluştu: {ex.Message}");
+                return false;
+            }
+        }
     }
 } 
