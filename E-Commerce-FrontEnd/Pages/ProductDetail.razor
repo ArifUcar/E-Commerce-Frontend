@@ -1,4 +1,4 @@
-@page "/product/{productId}"
+@page "/product/{ProductId:guid}"
 @using E_Commerce_FrontEnd.Models
 @using E_Commerce_FrontEnd.Services
 @inject IProductService ProductService
@@ -46,13 +46,95 @@
                         <h4 class="mb-3">@product.ProductName</h4>
                         <p class="text-muted mb-4">@product.Description</p>
 
-                        <div class="d-flex justify-content-between align-items-center mb-4">
-                            <h3 class="text-primary mb-0">@product.Price.ToString("N2") ₺</h3>
+                        <!-- İndirim Bilgileri -->
+                        <div class="mb-4">
+                            @if (product.IsDiscounted)
+                            {
+                                <div class="d-flex align-items-center gap-3 mb-2">
+                                    <h3 class="text-primary mb-0">@product.DiscountedPrice?.ToString("N2") ₺</h3>
+                                    <span class="text-decoration-line-through text-muted h5 mb-0">
+                                        @product.Price.ToString("N2") ₺
+                                    </span>
+                                    <span class="badge bg-danger">%@product.DiscountRate İndirim</span>
+                                </div>
+                                <small class="text-muted">
+                                    İndirim Süresi: @product.DiscountStartDate?.ToString("dd.MM.yyyy") - 
+                                    @product.DiscountEndDate?.ToString("dd.MM.yyyy")
+                                </small>
+                            }
+                            else
+                            {
+                                <h3 class="text-primary mb-0">@product.Price.ToString("N2") ₺</h3>
+                            }
+                        </div>
+
+                        <!-- Stok Durumu -->
+                        <div class="mb-4">
                             <span class="badge bg-@(product.StockQuantity > 10 ? "success" : "danger")">
                                 Stok: @product.StockQuantity
                             </span>
                         </div>
 
+                        <!-- Ürün Detayları -->
+                        @if (product.ProductDetail != null)
+                        {
+                            <div class="row g-3 mb-4">
+                                @if (!string.IsNullOrEmpty(product.ProductDetail.Brand))
+                                {
+                                    <div class="col-6">
+                                        <div class="detail-item">
+                                            <small class="text-muted d-block">Marka</small>
+                                            <strong>@product.ProductDetail.Brand</strong>
+                                        </div>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(product.ProductDetail.Model))
+                                {
+                                    <div class="col-6">
+                                        <div class="detail-item">
+                                            <small class="text-muted d-block">Model</small>
+                                            <strong>@product.ProductDetail.Model</strong>
+                                        </div>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(product.ProductDetail.Color))
+                                {
+                                    <div class="col-6">
+                                        <div class="detail-item">
+                                            <small class="text-muted d-block">Renk</small>
+                                            <strong>@product.ProductDetail.Color</strong>
+                                        </div>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(product.ProductDetail.Size))
+                                {
+                                    <div class="col-6">
+                                        <div class="detail-item">
+                                            <small class="text-muted d-block">Boyut</small>
+                                            <strong>@product.ProductDetail.Size</strong>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(product.ProductDetail.Specifications))
+                            {
+                                <div class="mb-4">
+                                    <h6>Teknik Özellikler</h6>
+                                    <p class="mb-0">@product.ProductDetail.Specifications</p>
+                                </div>
+                            }
+
+                            @if (!string.IsNullOrEmpty(product.ProductDetail.AdditionalInformation))
+                            {
+                                <div class="mb-4">
+                                    <h6>Ek Bilgiler</h6>
+                                    <p class="mb-0">@product.ProductDetail.AdditionalInformation</p>
+                                </div>
+                            }
+                        }
+
+                        <!-- Butonlar -->
                         <div class="d-flex gap-2">
                             @if (product.StockQuantity > 0)
                             {
@@ -66,110 +148,11 @@
                                     <i class="bi bi-x-circle me-2"></i>Stokta Yok
                                 </button>
                             }
-                            <button class="btn @(IsFavorite ? "btn-danger" : "btn-outline-danger")" 
+                            <button class="btn @(IsFavorite ? "btn-danger" : "btn-outline-danger")"
                                     @onclick="ToggleFavorite">
                                 <i class="bi @(IsFavorite ? "bi-heart-fill" : "bi-heart")"></i>
                             </button>
                         </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Ürün Detayları -->
-            <div class="col-12">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-body">
-                        <h5 class="mb-4">Ürün Detayları</h5>
-                        <div class="row g-4">
-                            @if (!string.IsNullOrEmpty(product.ProductDetail?.Brand))
-                            {
-                                <div class="col-md-4">
-                                    <div class="detail-item">
-                                        <small class="text-muted d-block">Marka</small>
-                                        <span>@product.ProductDetail.Brand</span>
-                                    </div>
-                                </div>
-                            }
-                            @if (!string.IsNullOrEmpty(product.ProductDetail?.Model))
-                            {
-                                <div class="col-md-4">
-                                    <div class="detail-item">
-                                        <small class="text-muted d-block">Model</small>
-                                        <span>@product.ProductDetail.Model</span>
-                                    </div>
-                                </div>
-                            }
-                            @if (!string.IsNullOrEmpty(product.ProductDetail?.Color))
-                            {
-                                <div class="col-md-4">
-                                    <div class="detail-item">
-                                        <small class="text-muted d-block">Renk</small>
-                                        <span>@product.ProductDetail.Color</span>
-                                    </div>
-                                </div>
-                            }
-                            @if (!string.IsNullOrEmpty(product.ProductDetail?.Size))
-                            {
-                                <div class="col-md-4">
-                                    <div class="detail-item">
-                                        <small class="text-muted d-block">Boyut</small>
-                                        <span>@product.ProductDetail.Size</span>
-                                    </div>
-                                </div>
-                            }
-                            @if (!string.IsNullOrEmpty(product.ProductDetail?.Material))
-                            {
-                                <div class="col-md-4">
-                                    <div class="detail-item">
-                                        <small class="text-muted d-block">Malzeme</small>
-                                        <span>@product.ProductDetail.Material</span>
-                                    </div>
-                                </div>
-                            }
-                            @if (!string.IsNullOrEmpty(product.ProductDetail?.Warranty))
-                            {
-                                <div class="col-md-4">
-                                    <div class="detail-item">
-                                        <small class="text-muted d-block">Garanti</small>
-                                        <span>@product.ProductDetail.Warranty</span>
-                                    </div>
-                                </div>
-                            }
-                            @if (product.ProductDetail?.Weight != null)
-                            {
-                                <div class="col-md-4">
-                                    <div class="detail-item">
-                                        <small class="text-muted d-block">Ağırlık</small>
-                                        <span>@product.ProductDetail.Weight @product.ProductDetail.WeightUnit</span>
-                                    </div>
-                                </div>
-                            }
-                            @if (!string.IsNullOrEmpty(product.ProductDetail?.Dimensions))
-                            {
-                                <div class="col-md-4">
-                                    <div class="detail-item">
-                                        <small class="text-muted d-block">Boyutlar</small>
-                                        <span>@product.ProductDetail.Dimensions</span>
-                                    </div>
-                                </div>
-                            }
-                        </div>
-
-                        @if (!string.IsNullOrEmpty(product.ProductDetail?.Specifications))
-                        {
-                            <div class="mt-4">
-                                <h6>Teknik Özellikler</h6>
-                                <p class="mb-0">@product.ProductDetail.Specifications</p>
-                            </div>
-                        }
-
-                        @if (!string.IsNullOrEmpty(product.ProductDetail?.AdditionalInformation))
-                        {
-                            <div class="mt-4">
-                                <h6>Ek Bilgiler</h6>
-                                <p class="mb-0">@product.ProductDetail.AdditionalInformation</p>
-                            </div>
-                        }
                     </div>
                 </div>
             </div>
@@ -205,17 +188,23 @@
 
     private async Task LoadProduct()
     {
-        if (ProductId != Guid.Empty)
+        try 
         {
-            product = await ProductService.GetProductById(ProductId);
-            if (product == null)
+            if (ProductId != Guid.Empty)
             {
-                NavigationManager.NavigateTo("/");
+                product = await ProductService.GetProductById(ProductId);
+                if (product == null)
+                {
+                    NavigationManager.NavigateTo("/");
+                }
             }
         }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Ürün yüklenirken bir hata oluştu!");
+            NavigationManager.NavigateTo("/");
+        }
     }
-
-
 
     private async Task AddToCart()
     {
