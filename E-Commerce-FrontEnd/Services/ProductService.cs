@@ -1,4 +1,5 @@
 using E_Commerce_FrontEnd.Models;
+using E_Commerce_FrontEnd.Models.Commands;
 using System.Net.Http.Json;
 
 namespace E_Commerce_FrontEnd.Services
@@ -16,7 +17,7 @@ namespace E_Commerce_FrontEnd.Services
         {
             try
             {
-                var response = await _httpClient.GetFromJsonAsync<List<Product>>("api/Product/GetAll");
+                var response = await _httpClient.GetFromJsonAsync<List<Product>>("api/Product");
                 return response ?? new List<Product>();
             }
             catch (Exception ex)
@@ -26,11 +27,11 @@ namespace E_Commerce_FrontEnd.Services
             }
         }
 
-        public async Task<Product> GetProductById(string id)
+        public async Task<Product> GetProductById(Guid id)
         {
             try
             {
-                return await _httpClient.GetFromJsonAsync<Product>($"api/Product/GetById/{id}");
+                return await _httpClient.GetFromJsonAsync<Product>($"api/Product/{id}");
             }
             catch (Exception ex)
             {
@@ -39,7 +40,25 @@ namespace E_Commerce_FrontEnd.Services
             }
         }
 
-        public async Task<List<Product>> GetProductsByCategory(string categoryId)
+        public async Task<List<Product>> GetDiscountedProducts()
+        {
+            try
+            {
+                var allProducts = await GetAllProducts();
+                return allProducts
+                    .Where(p => p.DiscountRate > 0 || p.DiscountedPrice < p.Price)
+                    .OrderByDescending(p => p.DiscountRate)
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"İndirimli ürünler getirilirken hata oluştu: {ex.Message}");
+                return new List<Product>();
+            }
+        }
+
+
+        public async Task<List<Product>> GetProductsByCategory(Guid categoryId)
         {
             try
             {
@@ -100,32 +119,11 @@ namespace E_Commerce_FrontEnd.Services
             }
         }
 
-        public async Task<bool> AddProduct(ProductCreateModel product)
+        public async Task<bool> AddProduct(CreateProductCommand product)
         {
             try
             {
-                var response = await _httpClient.PostAsJsonAsync("api/Product", new
-                {
-                    productName = product.ProductName,
-                    description = product.Description,
-                    price = product.Price,
-                    stockQuantity = product.StockQuantity,
-                    categoryId = product.CategoryId,
-                    base64Image = product.Base64Image,
-                    color = product.Color,
-                    size = product.Size,
-                    material = product.Material,
-                    brand = product.Brand,
-                    model = product.Model,
-                    warranty = product.Warranty,
-                    specifications = product.Specifications,
-                    additionalInformation = product.AdditionalInformation,
-                    weight = product.Weight,
-                    weightUnit = product.WeightUnit,
-                    dimensions = product.Dimensions,
-                    stockCode = product.StockCode,
-                    barcode = product.Barcode
-                });
+                var response = await _httpClient.PostAsJsonAsync("api/Product", product);
                 return response.IsSuccessStatusCode;
             }
             catch (Exception ex)
@@ -135,32 +133,11 @@ namespace E_Commerce_FrontEnd.Services
             }
         }
 
-        public async Task<bool> UpdateProduct(string id, ProductCreateModel product)
+        public async Task<bool> UpdateProduct(Guid id, CreateProductCommand product)
         {
             try
             {
-                var response = await _httpClient.PutAsJsonAsync($"api/Product/{id}", new
-                {
-                    productName = product.ProductName,
-                    description = product.Description,
-                    price = product.Price,
-                    stockQuantity = product.StockQuantity,
-                    categoryId = product.CategoryId,
-                    base64Image = product.Base64Image,
-                    color = product.Color,
-                    size = product.Size,
-                    material = product.Material,
-                    brand = product.Brand,
-                    model = product.Model,
-                    warranty = product.Warranty,
-                    specifications = product.Specifications,
-                    additionalInformation = product.AdditionalInformation,
-                    weight = product.Weight,
-                    weightUnit = product.WeightUnit,
-                    dimensions = product.Dimensions,
-                    stockCode = product.StockCode,
-                    barcode = product.Barcode
-                });
+                var response = await _httpClient.PutAsJsonAsync($"api/Product/{id}", product);
                 return response.IsSuccessStatusCode;
             }
             catch (Exception ex)
@@ -170,11 +147,11 @@ namespace E_Commerce_FrontEnd.Services
             }
         }
 
-        public async Task<bool> DeleteProduct(string id)
+        public async Task<bool> DeleteProduct(Guid id)
         {
             try
             {
-                var response = await _httpClient.DeleteAsync($"api/Product/Delete/{id}");
+                var response = await _httpClient.DeleteAsync($"api/Product/{id}");
                 return response.IsSuccessStatusCode;
             }
             catch (Exception ex)

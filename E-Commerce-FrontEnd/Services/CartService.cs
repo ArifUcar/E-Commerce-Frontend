@@ -33,25 +33,8 @@ namespace E_Commerce_FrontEnd.Services
 
         public async Task AddToCart(Product product, int quantity = 1)
         {
-            var currentProduct = await _productService.GetProductById(product.Id);
-            if (currentProduct == null)
-            {
-                throw new Exception("Ürün bulunamadı.");
-            }
-
             var items = await GetCartItems();
             var existingItem = items.FirstOrDefault(i => i.ProductId == product.Id);
-
-            int totalRequestedQuantity = quantity;
-            if (existingItem != null)
-            {
-                totalRequestedQuantity += existingItem.Quantity;
-            }
-
-            if (totalRequestedQuantity > currentProduct.StockQuantity)
-            {
-                throw new Exception($"Üzgünüz, bu üründen yalnızca {currentProduct.StockQuantity} adet stok kaldı.");
-            }
 
             if (existingItem != null)
             {
@@ -61,53 +44,31 @@ namespace E_Commerce_FrontEnd.Services
             {
                 items.Add(new CartItem
                 {
-                    Id = Guid.NewGuid().ToString(),
+                    Id = Guid.NewGuid(),
                     ProductId = product.Id,
                     ProductName = product.ProductName,
-                    ImageUrl = !string.IsNullOrEmpty(product.Base64Image) 
-                        ? $"data:image/jpeg;base64,{product.Base64Image}" 
-                        : product.ImagePath,
-                    Price = product.Price,
+                    ImageUrl = product.ImagePath,
+                    Price = product.CurrentPrice,
                     Quantity = quantity
                 });
             }
 
             await SaveCart();
-            OnChange?.Invoke();
         }
 
-        public async Task UpdateQuantity(string cartItemId, int quantity)
+        public async Task UpdateQuantity(Guid cartItemId, int quantity)
         {
             var items = await GetCartItems();
             var item = items.FirstOrDefault(i => i.Id == cartItemId);
             
             if (item != null)
             {
-                var currentProduct = await _productService.GetProductById(item.ProductId);
-                if (currentProduct == null)
-                {
-                    throw new Exception("Ürün bulunamadı.");
-                }
-
-                if (quantity > currentProduct.StockQuantity)
-                {
-                    throw new Exception($"Üzgünüz, bu üründen yalnızca {currentProduct.StockQuantity} adet stok kaldı.");
-                }
-
-                if (quantity <= 0)
-                {
-                    items.Remove(item);
-                }
-                else
-                {
-                    item.Quantity = quantity;
-                }
+                item.Quantity = quantity;
                 await SaveCart();
             }
-            OnChange?.Invoke();
         }
 
-        public async Task RemoveFromCart(string cartItemId)
+        public async Task RemoveFromCart(Guid cartItemId)
         {
             var items = await GetCartItems();
             var item = items.FirstOrDefault(i => i.Id == cartItemId);
@@ -117,21 +78,12 @@ namespace E_Commerce_FrontEnd.Services
                 items.Remove(item);
                 await SaveCart();
             }
-            OnChange?.Invoke();
         }
 
         public async Task ClearCart()
         {
             _cartItems = new List<CartItem>();
             await SaveCart();
-            OnChange?.Invoke();
-        }
-
-        private async Task SaveCart()
-        {
-            await _jsRuntime.InvokeVoidAsync("localStorage.setItem", CART_KEY, 
-                JsonSerializer.Serialize(_cartItems));
-            OnChange?.Invoke();
         }
 
         public int GetCartItemCount()
@@ -142,6 +94,13 @@ namespace E_Commerce_FrontEnd.Services
         public decimal GetCartTotal()
         {
             return _cartItems?.Sum(i => i.TotalPrice) ?? 0;
+        }
+
+        private async Task SaveCart()
+        {
+            var cartJson = JsonSerializer.Serialize(_cartItems);
+            await _jsRuntime.InvokeVoidAsync("localStorage.setItem", CART_KEY, cartJson);
+            OnChange?.Invoke();
         }
     }
 } 

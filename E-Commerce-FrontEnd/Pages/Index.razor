@@ -10,11 +10,7 @@
     <!-- Kategoriler -->
     @if (categories == null)
     {
-        <div class="text-center p-5">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Yükleniyor...</span>
-            </div>
-        </div>
+        <LoadingSpinner />
     }
     else if (!categories.Any())
     {
@@ -40,26 +36,24 @@
         </div>
     }
 
-    <!-- Öne Çıkan Ürünler -->
+    <!-- İndirimli Ürünler -->
     <div class="row mb-5">
         <div class="col-12">
-            <h5 class="mb-3">Öne Çıkan Ürünler</h5>
+            <h5 class="mb-3">Fırsat Ürünleri</h5>
         </div>
-        @if (featuredProducts == null)
+        @if (discountedProducts == null)
         {
-            <div class="text-center">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Yükleniyor...</span>
-                </div>
-            </div>
+            <LoadingSpinner />
         }
         else
         {
             <div class="row g-4">
-                @foreach (var product in featuredProducts)
+                @foreach (var product in discountedProducts)
                 {
                     <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-                        <ProductCard Product="product" OnProductClick="@(p => NavigateToProduct(p.Id))" />
+                        <ProductCard 
+                            Product="product" 
+                            OnProductClick="@(async (product) => await NavigateToProduct(product.Id))" />
                     </div>
                 }
             </div>
@@ -73,11 +67,7 @@
         </div>
         @if (newProducts == null)
         {
-            <div class="text-center">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Yükleniyor...</span>
-                </div>
-            </div>
+            <LoadingSpinner />
         }
         else
         {
@@ -85,7 +75,9 @@
                 @foreach (var product in newProducts)
                 {
                     <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-                        <ProductCard Product="product" OnProductClick="@(p => NavigateToProduct(p.Id))" />
+                        <ProductCard 
+                            Product="product" 
+                            OnProductClick="@(async (product) => await NavigateToProduct(product.Id))" />
                     </div>
                 }
             </div>
@@ -106,7 +98,7 @@
 
 @code {
     private List<Category> categories;
-    private List<Product> featuredProducts;
+    private List<Product> discountedProducts;
     private List<Product> newProducts;
 
     protected override async Task OnInitializedAsync()
@@ -119,18 +111,28 @@
         categories = await CategoryService.GetAllCategories();
         var allProducts = await ProductService.GetAllProducts();
         
-        // Örnek olarak ilk 8 ürünü öne çıkan olarak gösterelim
-        featuredProducts = allProducts.Take(8).ToList();
-        // Son 8 ürünü yeni ürünler olarak gösterelim
-        newProducts = allProducts.OrderByDescending(p => p.CreatedDate).Take(8).ToList();
+        // İndirimli ürünleri filtrele
+        discountedProducts = allProducts
+            .Where(p => p.DiscountedPrice.HasValue && 
+                   p.DiscountStartDate <= DateTime.Now && 
+                   p.DiscountEndDate >= DateTime.Now)
+            .OrderByDescending(p => p.DiscountRate)
+            .Take(8)
+            .ToList();
+
+        // Son eklenen ürünleri al
+        newProducts = allProducts
+            .OrderByDescending(p => p.CreatedDate)
+            .Take(8)
+            .ToList();
     }
 
-    private void NavigateToCategory(string categoryId)
+    private void NavigateToCategory(Guid categoryId)
     {
         NavigationManager.NavigateTo($"/category/{categoryId}");
     }
 
-    private void NavigateToProduct(string productId)
+    private async Task NavigateToProduct(Guid productId)
     {
         NavigationManager.NavigateTo($"/product/{productId}");
     }

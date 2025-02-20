@@ -193,7 +193,7 @@
 
 @code {
     [Parameter]
-    public string ProductId { get; set; }
+    public Guid ProductId { get; set; }
 
     private Product product;
     private bool IsFavorite => FavoriteService.IsFavorite(ProductId);
@@ -205,7 +205,7 @@
 
     private async Task LoadProduct()
     {
-        if (!string.IsNullOrEmpty(ProductId))
+        if (ProductId != Guid.Empty)
         {
             product = await ProductService.GetProductById(ProductId);
             if (product == null)
@@ -214,6 +214,8 @@
             }
         }
     }
+
+
 
     private async Task AddToCart()
     {

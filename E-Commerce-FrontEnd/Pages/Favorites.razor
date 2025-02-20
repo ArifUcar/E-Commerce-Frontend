@@ -133,7 +133,7 @@
         favorites = await FavoriteService.GetFavorites();
     }
 
-    private async Task RemoveFromFavorites(string productId)
+    private async Task RemoveFromFavorites(Guid productId)
     {
         var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Bu ürünü favorilerinizden kaldırmak istediğinize emin misiniz?");
         if (confirmed)
@@ -153,7 +153,7 @@
         }
     }
 
-    private void ShowProductDetails(string productId)
+    private void ShowProductDetails(Guid productId)
     {
         NavigationManager.NavigateTo($"/product/{productId}");
     }

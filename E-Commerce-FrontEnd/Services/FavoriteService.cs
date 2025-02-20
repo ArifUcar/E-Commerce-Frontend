@@ -49,7 +49,7 @@ namespace E_Commerce_FrontEnd.Services
             OnChange?.Invoke();
         }
 
-        public async Task RemoveFromFavorites(string productId)
+        public async Task RemoveFromFavorites(Guid productId)
         {
             var favorites = await GetFavorites();
             var item = favorites.FirstOrDefault(f => f.ProductId == productId);
@@ -74,7 +74,7 @@ namespace E_Commerce_FrontEnd.Services
             OnChange?.Invoke();
         }
 
-        public bool IsFavorite(string productId)
+        public bool IsFavorite(Guid productId)
         {
             return _favorites?.Any(f => f.ProductId == productId) ?? false;
         }

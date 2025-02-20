@@ -2,7 +2,7 @@ namespace E_Commerce_FrontEnd.Models
 {
     public class Category
     {
-        public string Id { get; set; }
+        public Guid Id { get; set; }
         public string CategoryName { get; set; }
         public List<Product> Products { get; set; }
         public DateTime CreatedDate { get; set; }

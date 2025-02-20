@@ -7,9 +7,9 @@ namespace E_Commerce_FrontEnd.Services
         event Action OnChange;
         Task<List<FavoriteItem>> GetFavorites();
         Task AddToFavorites(Product product);
-        Task RemoveFromFavorites(string productId);
+        Task RemoveFromFavorites(Guid productId);
         Task ClearFavorites();
-        bool IsFavorite(string productId);
+        bool IsFavorite(Guid productId);
         int GetFavoriteCount();
     }
 } 

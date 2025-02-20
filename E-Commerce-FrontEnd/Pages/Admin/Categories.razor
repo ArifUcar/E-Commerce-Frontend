@@ -161,7 +161,7 @@ else
         loading = false;
     }
 
-    private async Task DeleteCategory(string id)
+    private async Task DeleteCategory(Guid id)
     {
         if (await JSRuntime.InvokeAsync<bool>("confirm", "Bu kategoriyi silmek istediğinize emin misiniz?"))
         {

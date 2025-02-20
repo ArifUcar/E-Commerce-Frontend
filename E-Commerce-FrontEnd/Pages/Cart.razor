@@ -151,7 +151,7 @@
         cartItems = await CartService.GetCartItems();
     }
 
-    private async Task UpdateQuantity(string itemId, int quantity)
+    private async Task UpdateQuantity(Guid itemId, int quantity)
     {
         try
         {
@@ -169,7 +169,7 @@
         }
     }
 
-    private async Task RemoveFromCart(string itemId)
+    private async Task RemoveFromCart(Guid itemId)
     {
         await CartService.RemoveFromCart(itemId);
         await LoadCart();

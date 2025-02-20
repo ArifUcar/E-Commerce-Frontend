@@ -26,7 +26,7 @@ namespace E_Commerce_FrontEnd.Services
             }
         }
 
-        public async Task<Category> GetCategoryById(string id)
+        public async Task<Category> GetCategoryById(Guid id)
         {
             try
             {
@@ -53,7 +53,7 @@ namespace E_Commerce_FrontEnd.Services
             }
         }
 
-        public async Task<bool> UpdateCategory(string id, CategoryCreateModel category)
+        public async Task<bool> UpdateCategory(Guid id, CategoryCreateModel category)
         {
             try
             {
@@ -67,7 +67,7 @@ namespace E_Commerce_FrontEnd.Services
             }
         }
 
-        public async Task<bool> DeleteCategory(string id)
+        public async Task<bool> DeleteCategory(Guid id)
         {
             try
             {
