@@ -111,12 +111,12 @@
                                 @foreach (var order in recentOrders)
                                 {
                                     <tr>
-                                        <td>#@order.OrderNumber</td>
-                                        <td>@order.CustomerName</td>
+                                        <td>@order.Id.ToString().Substring(0, 8)</td>
+                                        <td>@order.UserFullName</td>
                                         <td>@order.TotalAmount.ToString("N2") ₺</td>
                                         <td>
-                                            <span class="badge bg-@GetStatusColor(order.Status)">
-                                                @GetStatusText(order.Status)
+                                            <span class="badge bg-@GetStatusColor(order.OrderStatus)">
+                                                @GetStatusText(order.OrderStatus)
                                             </span>
                                         </td>
                                         <td>@order.OrderDate.ToShortDateString()</td>
@@ -200,38 +200,33 @@
 
     private async Task LoadDashboardData()
     {
-        // Bu metodlar backend'den veri çekecek şekilde implemente edilmeli
-        totalOrders = await OrderService.GetTotalOrderCount();
-        totalRevenue = await OrderService.GetTotalRevenue();
-        totalProducts = await ProductService.GetTotalProductCount();
-        totalUsers = await UserService.GetTotalUserCount();
-        recentOrders = await OrderService.GetRecentOrders(10);
-        lowStockProducts = await ProductService.GetLowStockProducts(5);
+        try
+        {
+            totalOrders = await OrderService.GetTotalOrderCount();
+            totalRevenue = await OrderService.GetTotalRevenue();
+            totalProducts = await ProductService.GetTotalProductCount();
+            totalUsers = await UserService.GetTotalUserCount();
+            recentOrders = await OrderService.GetRecentOrders(10);
+            lowStockProducts = await ProductService.GetLowStockProducts(5);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Dashboard verisi yüklenirken hata: {ex.Message}");
+        }
     }
 
     private string GetStatusColor(string status)
     {
         return status.ToLower() switch
         {
-            "pending" => "warning",
-            "processing" => "info",
-            "shipped" => "primary",
-            "delivered" => "success",
-            "cancelled" => "danger",
+            "hazırlanıyor" => "warning",
+            "işleniyor" => "info",
+            "kargoda" => "primary",
+            "teslim edildi" => "success",
+            "iptal edildi" => "danger",
             _ => "secondary"
         };
     }
 
-    private string GetStatusText(string status)
-    {
-        return status.ToLower() switch
-        {
-            "pending" => "Beklemede",
-            "processing" => "İşleniyor",
-            "shipped" => "Kargoda",
-            "delivered" => "Teslim Edildi",
-            "cancelled" => "İptal Edildi",
-            _ => status
-        };
-    }
+    private string GetStatusText(string status) => status;
 } 
