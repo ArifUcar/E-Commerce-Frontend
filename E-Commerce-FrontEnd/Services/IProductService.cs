@@ -10,7 +10,9 @@ namespace E_Commerce_FrontEnd.Services
         Task<List<Product>> GetProductsByCategory(Guid categoryId);
         Task<List<Product>> SearchProducts(string searchTerm);
         Task<int> GetTotalProductCount();
-        Task<List<Product>> GetLowStockProducts(int count);
+        Task<int> GetTotalStockProductCount();
+        Task<int> GetOutOfStockProductCount();
+        Task<int> GetLowStockProducts();
         Task<List<Product>> GetDiscountedProducts();
         Task<bool> AddProduct(CreateProductCommand product);
         Task<bool> UpdateProduct(Guid id, CreateProductCommand product);

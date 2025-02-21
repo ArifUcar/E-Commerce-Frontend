@@ -1,0 +1,127 @@
+@page "/admin/settings"
+@layout AdminLayout
+@using E_Commerce_FrontEnd.Models
+@using E_Commerce_FrontEnd.Services
+@using E_Commerce_FrontEnd.Shared
+@using Microsoft.AspNetCore.Authorization
+@inject IJSRuntime JSRuntime
+@attribute [Authorize(Roles = "Admin")]
+
+<div class="container-fluid py-4">
+    <div class="row">
+        <!-- Site Ayarları -->
+        <div class="col-md-6 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h2 class="h5 mb-0">Site Ayarları</h2>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Site Başlığı</label>
+                        <input type="text" class="form-control" value="E-Commerce" disabled>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Site Açıklaması</label>
+                        <textarea class="form-control" rows="3" disabled>Online Alışveriş Sitesi</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email Adresi</label>
+                        <input type="email" class="form-control" value="info@ecommerce.com" disabled>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Telefon</label>
+                        <input type="tel" class="form-control" value="0850 123 4567" disabled>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Adres</label>
+                        <textarea class="form-control" rows="3" disabled>İstanbul, Türkiye</textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Kargo Ayarları -->
+        <div class="col-md-6 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h2 class="h5 mb-0">Kargo Ayarları</h2>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Kargo Ücreti</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" value="29.90" disabled>
+                            <span class="input-group-text">₺</span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Ücretsiz Kargo Limiti</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" value="500" disabled>
+                            <span class="input-group-text">₺</span>
+                        </div>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" checked disabled>
+                        <label class="form-check-label">
+                            Ücretsiz Kargo Aktif
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Email Ayarları -->
+        <div class="col-md-6 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h2 class="h5 mb-0">Email Ayarları</h2>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">SMTP Sunucu</label>
+                        <input type="text" class="form-control" value="smtp.gmail.com" disabled>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">SMTP Port</label>
+                        <input type="number" class="form-control" value="587" disabled>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Gönderen Email</label>
+                        <input type="email" class="form-control" value="noreply@ecommerce.com" disabled>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Gönderen Adı</label>
+                        <input type="text" class="form-control" value="E-Commerce" disabled>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Şifre</label>
+                        <input type="password" class="form-control" value="********" disabled>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" checked disabled>
+                        <label class="form-check-label">
+                            SSL Kullan
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border-radius: 10px;
+    }
+
+    .form-control:disabled {
+        background-color: #f8f9fa;
+        cursor: not-allowed;
+    }
+
+    .form-check-input:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+</style> 

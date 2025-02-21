@@ -1,0 +1,178 @@
+@page "/admin/orders"
+@layout AdminLayout
+@using E_Commerce_FrontEnd.Models
+@using E_Commerce_FrontEnd.Services
+@using E_Commerce_FrontEnd.Shared
+@using Microsoft.AspNetCore.Authorization
+@inject IOrderService OrderService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+@attribute [Authorize(Roles = "Admin")]
+
+<div class="container-fluid py-4">
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3">
+            <h2 class="h5 mb-0">Sipariş Yönetimi</h2>
+        </div>
+        <div class="card-body">
+            @if (orders == null)
+            {
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Yükleniyor...</span>
+                    </div>
+                </div>
+            }
+            else if (!orders.Any())
+            {
+                <div class="alert alert-info">
+                    Henüz sipariş bulunmamaktadır.
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Sipariş Tarihi</th>
+                                <th>Müşteri</th>
+                                <th>Durum</th>
+                                <th>Toplam Tutar</th>
+                                <th>İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var order in orders)
+                            {
+                                <tr>
+                                    <td>@order.OrderDate.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
+                                    <td>
+                                        <div>@order.UserFullName</div>
+                                    </td>
+                                    <td>
+                                        <span class="badge @GetStatusBadgeClass(order.OrderStatus)">
+                                            @order.OrderStatus
+                                        </span>
+                                    </td>
+                                    <td>@($"{order.TotalAmount:N2}") ₺</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary me-2" @onclick="() => ShowOrderDetails(order)">
+                                            <i class="bi bi-eye"></i> Detay
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+
+    @if (selectedOrder != null)
+    {
+        <div class="modal fade show" style="display: block;" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Sipariş Detayı</h5>
+                        <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-4">
+                            <h6>Sipariş Bilgileri</h6>
+                            <p class="mb-1"><strong>Müşteri:</strong> @selectedOrder.UserFullName</p>
+                            <p class="mb-1"><strong>Tarih:</strong> @selectedOrder.OrderDate.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</p>
+                            <p class="mb-1"><strong>Durum:</strong> @selectedOrder.OrderStatus</p>
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Ürün</th>
+                                        <th>Adet</th>
+                                        <th>Birim Fiyat</th>
+                                        <th>Toplam</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in selectedOrder.OrderDetails)
+                                    {
+                                        <tr>
+                                            <td>@item.ProductName</td>
+                                            <td>@item.Quantity</td>
+                                            <td>@($"{item.UnitPrice:N2}") ₺</td>
+                                            <td>@($"{item.Quantity * item.UnitPrice:N2}") ₺</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="3" class="text-end"><strong>Toplam:</strong></td>
+                                        <td><strong>@($"{selectedOrder.TotalAmount:N2}") ₺</strong></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="CloseModal">Kapat</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-backdrop fade show"></div>
+    }
+</div>
+
+@code {
+    private List<Order> orders;
+    private Order selectedOrder;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadOrders();
+    }
+
+    private async Task LoadOrders()
+    {
+        orders = await OrderService.GetOrders();
+    }
+
+    private string GetStatusBadgeClass(string status)
+    {
+        return status?.ToLower() switch
+        {
+            "beklemede" => "bg-warning",
+            "onaylandı" => "bg-info",
+            "hazırlanıyor" => "bg-primary",
+            "kargoya verildi" => "bg-info",
+            "tamamlandı" => "bg-success",
+            "iptal edildi" => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+
+    private void ShowOrderDetails(Order order)
+    {
+        selectedOrder = order;
+    }
+
+    private void CloseModal()
+    {
+        selectedOrder = null;
+    }
+}
+
+<style>
+    .table th {
+        white-space: nowrap;
+    }
+
+    .badge {
+        font-size: 0.85em;
+        padding: 0.5em 0.75em;
+    }
+</style> 

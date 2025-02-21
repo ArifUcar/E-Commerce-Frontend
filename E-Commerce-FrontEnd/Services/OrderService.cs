@@ -60,7 +60,9 @@ namespace E_Commerce_FrontEnd.Services
         {
             try
             {
-                return await _httpClient.GetFromJsonAsync<int>("api/Order/total-count");
+                await SetAuthHeader();
+                var response = await _httpClient.GetFromJsonAsync<OrderCountResponse>("api/Order/count");
+                return response?.TotalOrders ?? 0;
             }
             catch (Exception ex)
             {
@@ -69,11 +71,16 @@ namespace E_Commerce_FrontEnd.Services
             }
         }
 
+     
+
+
         public async Task<decimal> GetTotalRevenue()
         {
             try
             {
-                return await _httpClient.GetFromJsonAsync<decimal>("api/Order/total-revenue");
+                await SetAuthHeader();
+                var response = await _httpClient.GetFromJsonAsync<OrderRevunneResponse>("api/Order/total-revenue");
+                return response?.TotalRevenue ?? 0;
             }
             catch (Exception ex)
             {
@@ -86,7 +93,9 @@ namespace E_Commerce_FrontEnd.Services
         {
             try
             {
-                return await _httpClient.GetFromJsonAsync<List<Order>>($"api/Order/recent/{count}");
+                await SetAuthHeader();
+                var response = await _httpClient.GetFromJsonAsync<List<Order>>($"api/Order/recent/{count}");
+                return response ?? new List<Order>();
             }
             catch (Exception ex)
             {
@@ -129,6 +138,25 @@ namespace E_Commerce_FrontEnd.Services
             {
                 Console.WriteLine($"Sipariş oluşturulurken hata: {ex.Message}");
                 return false;
+            }
+        }
+
+        public async Task<List<Order>> GetOrders()
+        {
+            try
+            {
+                await SetAuthHeader();
+                var response = await _httpClient.GetFromJsonAsync<List<Order>>("api/Order");
+                if (response != null)
+                {
+                    return response.OrderByDescending(o => o.OrderDate).ToList();
+                }
+                return new List<Order>();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Siparişler getirilirken hata oluştu: {ex.Message}");
+                return new List<Order>();
             }
         }
     }

@@ -8,7 +8,7 @@
 @using E_Commerce_FrontEnd.Services
 
 <div class="row g-4">
-    <!-- İstatistik Kartları -->
+    <!-- İstatistik Kartları - İlk Sıra -->
     <div class="col-md-3">
         <div class="card border-0 shadow-sm">
             <div class="card-body">
@@ -73,101 +73,35 @@
         </div>
     </div>
 
-    <!-- Son Siparişler -->
-    <div class="col-md-8">
+    <!-- Stok Durumu Kartları - İkinci Sıra -->
+    <div class="col-md-3">
         <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white py-3">
-                <h5 class="mb-0">Son Siparişler</h5>
-            </div>
             <div class="card-body">
-                @if (recentOrders == null)
-                {
-                    <div class="text-center p-3">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Yükleniyor...</span>
-                        </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2">Toplam Stok</h6>
+                        <h3 class="mb-0">@totalStockCount</h3>
                     </div>
-                }
-                else if (!recentOrders.Any())
-                {
-                    <div class="text-center p-3">
-                        <p class="mb-0">Henüz sipariş bulunmamaktadır.</p>
+                    <div class="icon-box bg-purple bg-opacity-10 text-purple">
+                        <i class="bi bi-boxes"></i>
                     </div>
-                }
-                else
-                {
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Sipariş No</th>
-                                    <th>Müşteri</th>
-                                    <th>Tutar</th>
-                                    <th>Durum</th>
-                                    <th>Tarih</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach (var order in recentOrders)
-                                {
-                                    <tr>
-                                        <td>@order.Id.ToString().Substring(0, 8)</td>
-                                        <td>@order.UserFullName</td>
-                                        <td>@order.TotalAmount.ToString("N2") ₺</td>
-                                        <td>
-                                            <span class="badge bg-@GetStatusColor(order.OrderStatus)">
-                                                @GetStatusText(order.OrderStatus)
-                                            </span>
-                                        </td>
-                                        <td>@order.OrderDate.ToShortDateString()</td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                }
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Stok Durumu -->
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white py-3">
-                <h5 class="mb-0">Stok Durumu</h5>
-            </div>
             <div class="card-body">
-                @if (lowStockProducts == null)
-                {
-                    <div class="text-center p-3">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Yükleniyor...</span>
-                        </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2">Düşük Stoklu Ürün </h6>
+                        <h3 class="mb-0">@lowStockCount</h3>
                     </div>
-                }
-                else if (!lowStockProducts.Any())
-                {
-                    <div class="text-center p-3">
-                        <p class="mb-0">Stok durumu normal olan ürünler.</p>
+                    <div class="icon-box bg-danger bg-opacity-10 text-danger">
+                        <i class="bi bi-exclamation-triangle"></i>
                     </div>
-                }
-                else
-                {
-                    <div class="list-group list-group-flush">
-                        @foreach (var product in lowStockProducts)
-                        {
-                            <div class="list-group-item px-0">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <h6 class="mb-1">@product.ProductName</h6>
-                                        <small class="text-muted">@product.CategoryName</small>
-                                    </div>
-                                    <span class="badge bg-danger">@product.StockQuantity adet</span>
-                                </div>
-                            </div>
-                        }
-                    </div>
-                }
+                </div>
             </div>
         </div>
     </div>
@@ -175,13 +109,21 @@
 
 <style>
     .icon-box {
-        width: 48px;
-        height: 48px;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 24px;
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    }
+
+    .text-purple {
+    color: #6f42c1;
+    }
+
+    .bg-purple {
+    background-color: #6f42c1;
     }
 </style>
 
@@ -190,8 +132,8 @@
     private decimal totalRevenue;
     private int totalProducts;
     private int totalUsers;
-    private List<Order> recentOrders;
-    private List<Product> lowStockProducts;
+    private int totalStockCount;
+    private int lowStockCount;
 
     protected override async Task OnInitializedAsync()
     {
@@ -206,27 +148,13 @@
             totalRevenue = await OrderService.GetTotalRevenue();
             totalProducts = await ProductService.GetTotalProductCount();
             totalUsers = await UserService.GetTotalUserCount();
-            recentOrders = await OrderService.GetRecentOrders(10);
-            lowStockProducts = await ProductService.GetLowStockProducts(5);
+            totalStockCount = await ProductService.GetTotalStockProductCount();
+            lowStockCount = await ProductService.GetLowStockProducts();
+
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Dashboard verisi yüklenirken hata: {ex.Message}");
         }
     }
-
-    private string GetStatusColor(string status)
-    {
-        return status.ToLower() switch
-        {
-            "hazırlanıyor" => "warning",
-            "işleniyor" => "info",
-            "kargoda" => "primary",
-            "teslim edildi" => "success",
-            "iptal edildi" => "danger",
-            _ => "secondary"
-        };
-    }
-
-    private string GetStatusText(string status) => status;
 } 

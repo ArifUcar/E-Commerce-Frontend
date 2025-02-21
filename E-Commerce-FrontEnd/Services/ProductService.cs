@@ -1,6 +1,9 @@
 using E_Commerce_FrontEnd.Models;
 using E_Commerce_FrontEnd.Models.Commands;
+using Microsoft.JSInterop;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace E_Commerce_FrontEnd.Services
 {
@@ -8,15 +11,40 @@ namespace E_Commerce_FrontEnd.Services
     {
         private readonly HttpClient _httpClient;
 
-        public ProductService(HttpClient httpClient)
+        private readonly IJSRuntime _jsRuntime;
+
+        public ProductService(HttpClient httpClient, IJSRuntime jsRuntime)
         {
             _httpClient = httpClient;
+            _jsRuntime = jsRuntime;
+        }
+
+        private async Task SetAuthHeader()
+        {
+            try
+            {
+                var authData = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", "auth_data");
+                if (!string.IsNullOrEmpty(authData))
+                {
+                    var authInfo = JsonSerializer.Deserialize<AuthData>(authData);
+                    if (!string.IsNullOrEmpty(authInfo?.Token))
+                    {
+                        _httpClient.DefaultRequestHeaders.Authorization =
+                            new AuthenticationHeaderValue("Bearer", authInfo.Token);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Token ayarlanırken hata oluştu: {ex.Message}");
+            }
         }
 
         public async Task<List<Product>> GetAllProducts()
         {
             try
             {
+                await SetAuthHeader();
                 var response = await _httpClient.GetFromJsonAsync<List<Product>>("api/Product");
                 return response ?? new List<Product>();
             }
@@ -31,6 +59,7 @@ namespace E_Commerce_FrontEnd.Services
         {
             try
             {
+                await SetAuthHeader();
                 return await _httpClient.GetFromJsonAsync<Product>($"api/Product/{id}");
             }
             catch (Exception ex)
@@ -44,6 +73,7 @@ namespace E_Commerce_FrontEnd.Services
         {
             try
             {
+                await SetAuthHeader();
                 var response = await _httpClient.GetFromJsonAsync<List<Product>>("api/Product/GetDiscountedProducts");
                 if (response != null)
                 {
@@ -68,6 +98,7 @@ namespace E_Commerce_FrontEnd.Services
         {
             try
             {
+                await SetAuthHeader();
                 var response = await _httpClient.GetFromJsonAsync<List<Product>>($"api/Product/GetByCategory/{categoryId}");
                 return response ?? new List<Product>();
             }
@@ -82,6 +113,7 @@ namespace E_Commerce_FrontEnd.Services
         {
             try
             {
+                await SetAuthHeader();
                 if (string.IsNullOrWhiteSpace(searchTerm))
                     return await GetAllProducts();
 
@@ -98,12 +130,16 @@ namespace E_Commerce_FrontEnd.Services
                 return new List<Product>();
             }
         }
+      
 
         public async Task<int> GetTotalProductCount()
         {
             try
             {
-                return await _httpClient.GetFromJsonAsync<int>("api/Product/GetCount");
+                await SetAuthHeader();
+                var response = await _httpClient.GetFromJsonAsync<ProductStokSummary>("api/Product/stock-summary");
+                return response?.TotalProducts ?? 0;
+                
             }
             catch (Exception ex)
             {
@@ -111,19 +147,52 @@ namespace E_Commerce_FrontEnd.Services
                 return 0;
             }
         }
-
-        public async Task<List<Product>> GetLowStockProducts(int count)
+        public async Task<int> GetTotalStockProductCount()
         {
             try
             {
-                return await _httpClient.GetFromJsonAsync<List<Product>>($"api/Product/GetLowStock/{count}");
+                await SetAuthHeader();
+                var response = await _httpClient.GetFromJsonAsync<ProductStokSummary>("api/Product/stock-summary");
+                return response?.TotalStockQuantity ?? 0;
+
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Düşük stoklu ürünler alınırken hata oluştu: {ex.Message}");
-                return new List<Product>();
+                Console.WriteLine($"Toplam ürün stok sayısı alınırken hata oluştu: {ex.Message}");
+                return 0;
             }
         }
+        public async Task<int> GetOutOfStockProductCount()
+        {
+            try
+            {
+                await SetAuthHeader();
+                var response = await _httpClient.GetFromJsonAsync<ProductStokSummary>("api/Product/stock-summary");
+                return response?.OutOfStockProducts ?? 0;
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Tükenmiş ürün sayısı alınırken hata oluştu: {ex.Message}");
+                return 0;
+            }
+        }
+        public async Task<int> GetLowStockProducts()
+        {
+            try
+            {
+                await SetAuthHeader();
+                var response = await _httpClient.GetFromJsonAsync<ProductStokSummary>("api/Product/stock-summary");
+                return response?.LowStockProducts ?? 0;
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Stook saysı az olan ürünleri alınırken hata oluştu: {ex.Message}");
+                return 0;
+            }
+        }
+
 
         public async Task<bool> AddProduct(CreateProductCommand product)
         {
@@ -143,6 +212,7 @@ namespace E_Commerce_FrontEnd.Services
         {
             try
             {
+                await SetAuthHeader();
                 var response = await _httpClient.PutAsJsonAsync($"api/Product/{id}", product);
                 return response.IsSuccessStatusCode;
             }
@@ -157,6 +227,7 @@ namespace E_Commerce_FrontEnd.Services
         {
             try
             {
+                await SetAuthHeader();
                 var response = await _httpClient.DeleteAsync($"api/Product/{id}");
                 return response.IsSuccessStatusCode;
             }
@@ -166,5 +237,7 @@ namespace E_Commerce_FrontEnd.Services
                 return false;
             }
         }
+
+        
     }
 } 
