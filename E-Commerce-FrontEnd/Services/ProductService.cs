@@ -44,11 +44,17 @@ namespace E_Commerce_FrontEnd.Services
         {
             try
             {
-                var allProducts = await GetAllProducts();
-                return allProducts
-                    .Where(p => p.DiscountRate > 0 || p.DiscountedPrice < p.Price)
-                    .OrderByDescending(p => p.DiscountRate)
-                    .ToList();
+                var response = await _httpClient.GetFromJsonAsync<List<Product>>("api/Product/GetDiscountedProducts");
+                if (response != null)
+                {
+                    // Sadece aktif indirimi olan ürünleri filtrele
+                    return response.Where(p => 
+                        p.DiscountRate > 0 && 
+                        p.DiscountStartDate <= DateTime.Now && 
+                        p.DiscountEndDate >= DateTime.Now
+                    ).ToList();
+                }
+                return new List<Product>();
             }
             catch (Exception ex)
             {

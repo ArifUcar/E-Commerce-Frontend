@@ -122,7 +122,7 @@
                                 <span class="badge bg-danger rounded-pill position-absolute top-0 end-0">
                                     @favoriteCount
                                 </span>
-                            }
+                            }   
                         </a>
 
                         <a href="/cart" class="header-action">
@@ -135,6 +135,13 @@
                                 </span>
                             }
                         </a>
+                        <div>
+                            <button class="header-action border-0 bg-transparent" @onclick="GoToOpportunities">
+                                <i class="bi bi-tags"></i>
+                                <span>Fırsatlar</span>
+                            </button>
+                        </div>
+
 
                         @if (AuthService.IsAuthenticated)
                         {
@@ -398,6 +405,10 @@
 
         // Reset and start timer
         debounceTimer.Change(300, Timeout.Infinite);
+    }
+    private void GoToOpportunities()
+    {
+        NavigationManager.NavigateTo("/opportunities");
     }
 
     private void OnDebounceTimerElapsed(object state)

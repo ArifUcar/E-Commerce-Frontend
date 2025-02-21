@@ -21,14 +21,49 @@ namespace E_Commerce_FrontEnd.Services
 
         public async Task<List<CartItem>> GetCartItems()
         {
-            if (_cartItems == null)
+            try
             {
                 var cartJson = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", CART_KEY);
-                _cartItems = string.IsNullOrEmpty(cartJson) 
-                    ? new List<CartItem>() 
-                    : JsonSerializer.Deserialize<List<CartItem>>(cartJson);
+                
+                if (!string.IsNullOrEmpty(cartJson))
+                {
+                    var options = new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true // Büyük/küçük harf duyarlılığını kaldır
+                    };
+                    
+                    _cartItems = JsonSerializer.Deserialize<List<CartItem>>(cartJson, options);
+                }
+                
+                _cartItems ??= new List<CartItem>();
+                return _cartItems;
             }
-            return _cartItems;
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Sepet yüklenirken hata oluştu: {ex.Message}");
+                _cartItems = new List<CartItem>();
+                return _cartItems;
+            }
+        }
+
+        private async Task SaveCart()
+        {
+            try
+            {
+                var options = new JsonSerializerOptions
+                {
+                    WriteIndented = true,
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                };
+                
+                var cartJson = JsonSerializer.Serialize(_cartItems, options);
+                await _jsRuntime.InvokeVoidAsync("localStorage.setItem", CART_KEY, cartJson);
+                OnChange?.Invoke();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Sepet kaydedilirken hata oluştu: {ex.Message}");
+            }
         }
 
         public async Task AddToCart(Product product, int quantity = 1)
@@ -47,8 +82,9 @@ namespace E_Commerce_FrontEnd.Services
                     Id = Guid.NewGuid(),
                     ProductId = product.Id,
                     ProductName = product.ProductName,
-                    ImageUrl = product.ImagePath,
-                    Price = product.CurrentPrice,
+                    Base64Image = product.Base64Image,
+                    ImagePath = product.ImagePath,
+                    Price = product.IsDiscounted ? product.CurrentPrice : product.Price,
                     Quantity = quantity
                 });
             }
@@ -94,13 +130,6 @@ namespace E_Commerce_FrontEnd.Services
         public decimal GetCartTotal()
         {
             return _cartItems?.Sum(i => i.TotalPrice) ?? 0;
-        }
-
-        private async Task SaveCart()
-        {
-            var cartJson = JsonSerializer.Serialize(_cartItems);
-            await _jsRuntime.InvokeVoidAsync("localStorage.setItem", CART_KEY, cartJson);
-            OnChange?.Invoke();
         }
     }
 } 

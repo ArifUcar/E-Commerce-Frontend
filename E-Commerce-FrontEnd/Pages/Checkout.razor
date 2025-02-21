@@ -1,0 +1,145 @@
+@page "/checkout"
+@using E_Commerce_FrontEnd.Models
+@using E_Commerce_FrontEnd.Services
+@inject ICartService CartService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+
+<div class="container py-4">
+    <div class="row">
+        <!-- Sol Taraf - Sipariş Özeti -->
+        <div class="col-md-8 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h2 class="h4 mb-4">Sipariş Özeti</h2>
+                    
+                    @if (cartItems == null)
+                    {
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Yükleniyor...</span>
+                            </div>
+                        </div>
+                    }
+                    else if (!cartItems.Any())
+                    {
+                        <div class="alert alert-info">
+                            Sepetinizde ürün bulunmamaktadır.
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var item in cartItems)
+                        {
+                            <div class="d-flex align-items-center mb-3 p-3 bg-light rounded">
+                                <img src="@item.ImageUrl" 
+                                     alt="@item.ProductName" 
+                                     class="me-3" 
+                                     style="width: 64px; height: 64px; object-fit: cover;">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-0">@item.ProductName</h6>
+                                    <small class="text-muted">@item.Quantity adet x @($"{item.Price:N2}") ₺</small>
+                                </div>
+                                <div class="text-end">
+                                    <strong>@($"{item.TotalPrice:N2}") ₺</strong>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Sağ Taraf - Ödeme Bilgileri -->
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <h3 class="h5 mb-4">Sipariş Tutarı</h3>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Ara Toplam</span>
+                        <strong>@($"{CartService.GetCartTotal():N2}") ₺</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Kargo</span>
+                        <strong>@($"{kargoUcreti:N2}") ₺</strong>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-4">
+                        <span class="h6">Toplam</span>
+                        <strong class="h5 text-primary">@($"{(CartService.GetCartTotal() + kargoUcreti):N2}") ₺</strong>
+                    </div>
+                    <button class="btn btn-primary w-100" @onclick="PlaceOrder">
+                        <i class="bi bi-credit-card me-2"></i>
+                        Siparişi Tamamla
+                    </button>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h3 class="h5 mb-3">Teslimat Adresi</h3>
+                    <div class="mb-3">
+                        <label class="form-label">Ad Soyad</label>
+                        <input type="text" class="form-control" @bind="adSoyad">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Telefon</label>
+                        <input type="tel" class="form-control" @bind="telefon">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Adres</label>
+                        <textarea class="form-control" rows="3" @bind="adres"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<CartItem> cartItems;
+    private decimal kargoUcreti = 29.90m;
+    private string adSoyad = "";
+    private string telefon = "";
+    private string adres = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        cartItems = await CartService.GetCartItems();
+    }
+
+    private async Task PlaceOrder()
+    {
+        if (string.IsNullOrWhiteSpace(adSoyad) || 
+            string.IsNullOrWhiteSpace(telefon) || 
+            string.IsNullOrWhiteSpace(adres))
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Lütfen teslimat bilgilerini eksiksiz doldurun.");
+            return;
+        }
+
+        // Fake sipariş tamamlama
+        await CartService.ClearCart();
+        await JSRuntime.InvokeVoidAsync("alert", "Siparişiniz başarıyla alındı! Teşekkür ederiz.");
+        NavigationManager.NavigateTo("/");
+    }
+}
+
+<style>
+    .card {
+        border-radius: 10px;
+    }
+
+    .btn-primary {
+        border-radius: 5px;
+        padding: 12px;
+    }
+
+    .form-control {
+        border-radius: 5px;
+    }
+
+    .bg-light {
+        border-radius: 8px;
+    }
+</style> 

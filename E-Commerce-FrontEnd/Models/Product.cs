@@ -10,7 +10,15 @@ namespace E_Commerce_FrontEnd.Models
         public decimal? DiscountRate { get; set; }
         public DateTime? DiscountStartDate { get; set; }
         public DateTime? DiscountEndDate { get; set; }
-        public bool IsDiscounted { get; set; }
+        public bool IsDiscounted
+        {
+            get
+            {
+                return DiscountRate > 0 &&
+                       DiscountStartDate <= DateTime.Now &&
+                       DiscountEndDate >= DateTime.Now;
+            }
+        }
         public int StockQuantity { get; set; }
         public Guid CategoryId { get; set; }
         public string CategoryName { get; set; }
@@ -21,6 +29,17 @@ namespace E_Commerce_FrontEnd.Models
 
         // İndirim hesaplamaları için yardımcı özellikler
         public decimal CurrentPrice => IsDiscounted ? DiscountedPrice.Value : Price;
+
+        public string ImageUrl
+        {
+            get
+            {
+                if (!string.IsNullOrEmpty(Base64Image))
+                    return $"data:image/jpeg;base64,{Base64Image}";
+                
+                return string.IsNullOrEmpty(ImagePath) ? "/images/no-image.jpg" : ImagePath;
+            }
+        }
     }
 
     public class ProductDetail
