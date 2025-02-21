@@ -2,6 +2,7 @@
 @using E_Commerce_FrontEnd.Models
 @using E_Commerce_FrontEnd.Services
 @inject ICartService CartService
+@inject IOrderService OrderService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
 
@@ -77,7 +78,7 @@
 
             <div class="card border-0 shadow-sm">
                 <div class="card-body">
-                    <h3 class="h5 mb-3">Teslimat Adresi</h3>
+                    <h3 class="h5 mb-3">Teslimat Bilgileri</h3>
                     <div class="mb-3">
                         <label class="form-label">Ad Soyad</label>
                         <input type="text" class="form-control" @bind="adSoyad">
@@ -89,6 +90,18 @@
                     <div class="mb-3">
                         <label class="form-label">Adres</label>
                         <textarea class="form-control" rows="3" @bind="adres"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Şehir</label>
+                        <input type="text" class="form-control" @bind="sehir">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">İlçe</label>
+                        <input type="text" class="form-control" @bind="ilce">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Posta Kodu</label>
+                        <input type="text" class="form-control" @bind="postaKodu">
                     </div>
                 </div>
             </div>
@@ -102,6 +115,9 @@
     private string adSoyad = "";
     private string telefon = "";
     private string adres = "";
+    private string sehir = "";
+    private string ilce = "";
+    private string postaKodu = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -112,16 +128,48 @@
     {
         if (string.IsNullOrWhiteSpace(adSoyad) || 
             string.IsNullOrWhiteSpace(telefon) || 
-            string.IsNullOrWhiteSpace(adres))
+            string.IsNullOrWhiteSpace(adres) ||
+            string.IsNullOrWhiteSpace(sehir) ||
+            string.IsNullOrWhiteSpace(ilce) ||
+            string.IsNullOrWhiteSpace(postaKodu))
         {
             await JSRuntime.InvokeVoidAsync("alert", "Lütfen teslimat bilgilerini eksiksiz doldurun.");
             return;
         }
 
-        // Fake sipariş tamamlama
-        await CartService.ClearCart();
-        await JSRuntime.InvokeVoidAsync("alert", "Siparişiniz başarıyla alındı! Teşekkür ederiz.");
-        NavigationManager.NavigateTo("/");
+        var orderDetails = cartItems.Select(item => new OrderDetail
+        {
+            ProductId = item.ProductId,
+            ProductName = item.ProductName,
+            Quantity = item.Quantity,
+            UnitPrice = item.Price
+        }).ToList();
+
+        var request = new CreateOrderRequest
+        {
+            OrderStatusId = OrderStatus.Pending, // Başlangıçta Beklemede durumunda
+            TotalAmount = CartService.GetCartTotal() + kargoUcreti,
+            CustomerName = adSoyad,
+            CustomerPhone = telefon,
+            ShippingAddress = adres,
+            City = sehir,
+            District = ilce,
+            ZipCode = postaKodu,
+            OrderDetails = orderDetails
+        };
+
+        var result = await OrderService.CreateOrder(request);
+        
+        if (result)
+        {
+            await CartService.ClearCart();
+            await JSRuntime.InvokeVoidAsync("alert", "Siparişiniz başarıyla alındı! Teşekkür ederiz.");
+            NavigationManager.NavigateTo("/");
+        }
+        else
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Sipariş oluşturulurken bir hata oluştu. Lütfen tekrar deneyin.");
+        }
     }
 }
 
