@@ -32,33 +32,39 @@
             else
             {
                 <div class="table-responsive">
-                    <table class="table table-hover">
+                    <table class="table table-hover align-middle">
                         <thead>
                             <tr>
-                                <th>Sipariş Tarihi</th>
+                                <th>Sipariş No</th>
                                 <th>Müşteri</th>
+                                <th>Telefon</th>
+                                <th>Adres</th>
+                                <th>Şehir/İlçe</th>
+                                <th>Tarih</th>
+                                <th>Tutar</th>
                                 <th>Durum</th>
-                                <th>Toplam Tutar</th>
-                                <th>İşlemler</th>
+                                <th>Detay</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach (var order in orders)
                             {
                                 <tr>
-                                    <td>@order.OrderDate.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
+                                    <td>@order.Id.ToString().Substring(0, 8)</td>
+                                    <td>@order.CustomerName</td>
+                                    <td>@order.CustomerPhone</td>
+                                    <td>@order.ShippingAddress</td>
+                                    <td>@order.City / @order.District</td>
+                                    <td>@order.OrderDate.ToShortDateString()</td>
+                                    <td>@order.TotalAmount.ToString("N2") ₺</td>
                                     <td>
-                                        <div>@order.UserFullName</div>
-                                    </td>
-                                    <td>
-                                        <span class="badge @GetStatusBadgeClass(order.OrderStatus)">
-                                            @order.OrderStatus
+                                        <span class="badge bg-@GetStatusColor(order.OrderStatus)">
+                                            @GetStatusText(order.OrderStatus)
                                         </span>
                                     </td>
-                                    <td>@($"{order.TotalAmount:N2}") ₺</td>
                                     <td>
-                                        <button class="btn btn-sm btn-outline-primary me-2" @onclick="() => ShowOrderDetails(order)">
-                                            <i class="bi bi-eye"></i> Detay
+                                        <button class="btn btn-sm btn-primary" @onclick="() => ShowOrderDetails(order)">
+                                            <i class="bi bi-eye"></i>
                                         </button>
                                     </td>
                                 </tr>
@@ -69,67 +75,91 @@
             }
         </div>
     </div>
+</div>
 
-    @if (selectedOrder != null)
-    {
-        <div class="modal fade show" style="display: block;" tabindex="-1">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Sipariş Detayı</h5>
-                        <button type="button" class="btn-close" @onclick="CloseModal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="mb-4">
+@if (selectedOrder != null)
+{
+    <div class="modal fade show" style="display: block;" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Sipariş Detayı</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6>Müşteri Bilgileri</h6>
+                            <p class="mb-1"><strong>Ad Soyad:</strong> @selectedOrder.CustomerName</p>
+                            <p class="mb-1"><strong>Telefon:</strong> @selectedOrder.CustomerPhone</p>
+                            <p class="mb-1"><strong>Adres:</strong> @selectedOrder.ShippingAddress</p>
+                            <p class="mb-1"><strong>Şehir/İlçe:</strong> @selectedOrder.City / @selectedOrder.District</p>
+                            <p class="mb-1"><strong>Posta Kodu:</strong> @selectedOrder.ZipCode</p>
+                        </div>
+                        <div class="col-md-6">
                             <h6>Sipariş Bilgileri</h6>
-                            <p class="mb-1"><strong>Müşteri:</strong> @selectedOrder.UserFullName</p>
-                            <p class="mb-1"><strong>Tarih:</strong> @selectedOrder.OrderDate.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</p>
-                            <p class="mb-1"><strong>Durum:</strong> @selectedOrder.OrderStatus</p>
-                        </div>
-
-                        <div class="table-responsive">
-                            <table class="table">
-                                <thead>
-                                    <tr>
-                                        <th>Ürün</th>
-                                        <th>Adet</th>
-                                        <th>Birim Fiyat</th>
-                                        <th>Toplam</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var item in selectedOrder.OrderDetails)
-                                    {
-                                        <tr>
-                                            <td>@item.ProductName</td>
-                                            <td>@item.Quantity</td>
-                                            <td>@($"{item.UnitPrice:N2}") ₺</td>
-                                            <td>@($"{item.Quantity * item.UnitPrice:N2}") ₺</td>
-                                        </tr>
-                                    }
-                                </tbody>
-                                <tfoot>
-                                    <tr>
-                                        <td colspan="3" class="text-end"><strong>Toplam:</strong></td>
-                                        <td><strong>@($"{selectedOrder.TotalAmount:N2}") ₺</strong></td>
-                                    </tr>
-                                </tfoot>
-                            </table>
+                            <p class="mb-1"><strong>Sipariş No:</strong> @selectedOrder.Id</p>
+                            <p class="mb-1"><strong>Tarih:</strong> @selectedOrder.OrderDate.ToString("dd/MM/yyyy HH:mm")</p>
+                            <p class="mb-1"><strong>Durum:</strong> @GetStatusText(selectedOrder.OrderStatus)</p>
+                            <p class="mb-1"><strong>Toplam Tutar:</strong> @selectedOrder.TotalAmount.ToString("N2") ₺</p>
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" @onclick="CloseModal">Kapat</button>
+
+                    <h6>Ürünler</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Ürün</th>
+                                    <th>Adet</th>
+                                    <th>Birim Fiyat</th>
+                                    <th>Toplam</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in selectedOrder.OrderDetails)
+                                {
+                                    <tr>
+                                        <td>@item.ProductName</td>
+                                        <td>@item.Quantity</td>
+                                        <td>@item.UnitPrice.ToString("N2") ₺</td>
+                                        <td>@item.SubTotal.ToString("N2") ₺</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="d-flex justify-content-between w-100">
+                        <div>
+                            <select class="form-select" @bind="selectedOrderStatus">
+                                <option value="@OrderStatus.Pending">Beklemede</option>
+                                <option value="@OrderStatus.Preparing">Hazırlanıyor</option>
+                                <option value="@OrderStatus.Approved">Onaylandı</option>
+                                <option value="@OrderStatus.Shipped">Kargoda</option>
+                                <option value="@OrderStatus.Completed">Tamamlandı</option>
+                                <option value="@OrderStatus.Cancelled">İptal Edildi</option>
+                            </select>
+                        </div>
+                        <div>
+                            <button type="button" class="btn btn-secondary me-2" @onclick="CloseModal">Kapat</button>
+                            <button type="button" class="btn btn-primary" @onclick="UpdateOrderStatus">
+                                Durumu Güncelle
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="modal-backdrop fade show"></div>
-    }
-</div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
 
 @code {
     private List<Order> orders;
     private Order selectedOrder;
+    private Guid selectedOrderStatus;
 
     protected override async Task OnInitializedAsync()
     {
@@ -141,20 +171,6 @@
         orders = await OrderService.GetOrders();
     }
 
-    private string GetStatusBadgeClass(string status)
-    {
-        return status?.ToLower() switch
-        {
-            "beklemede" => "bg-warning",
-            "onaylandı" => "bg-info",
-            "hazırlanıyor" => "bg-primary",
-            "kargoya verildi" => "bg-info",
-            "tamamlandı" => "bg-success",
-            "iptal edildi" => "bg-danger",
-            _ => "bg-secondary"
-        };
-    }
-
     private void ShowOrderDetails(Order order)
     {
         selectedOrder = order;
@@ -164,15 +180,72 @@
     {
         selectedOrder = null;
     }
+
+    private string GetStatusColor(string status)
+    {
+        return status switch
+        {
+            "8f7579ee-4af9-4b71-9ada-7f792f76921e" => "warning", // Pending
+            "af7579ee-4af9-4b71-9ada-7f792f76921a" => "info",    // Preparing
+            "9f7579ee-4af9-4b71-9ada-7f792f76921f" => "primary", // Approved
+            "bf7579ee-4af9-4b71-9ada-7f792f76921b" => "info",    // Shipped
+            "cf7579ee-4af9-4b71-9ada-7f792f76921c" => "success", // Completed
+            "df7579ee-4af9-4b71-9ada-7f792f76921d" => "danger",  // Cancelled
+            _ => "secondary"
+        };
+    }
+
+    private string GetStatusText(string status)
+    {
+        return status switch
+        {
+            "8f7579ee-4af9-4b71-9ada-7f792f76921e" => "Beklemede",
+            "af7579ee-4af9-4b71-9ada-7f792f76921a" => "Hazırlanıyor",
+            "9f7579ee-4af9-4b71-9ada-7f792f76921f" => "Onaylandı",
+            "bf7579ee-4af9-4b71-9ada-7f792f76921b" => "Kargoda",
+            "cf7579ee-4af9-4b71-9ada-7f792f76921c" => "Tamamlandı",
+            "df7579ee-4af9-4b71-9ada-7f792f76921d" => "İptal Edildi",
+            _ => status
+        };
+    }
+
+    private async Task UpdateOrderStatus()
+    {
+        if (selectedOrder != null)
+        {
+            var result = await OrderService.UpdateOrderStatus(selectedOrder.Id, selectedOrderStatus);
+            if (result)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Sipariş durumu başarıyla güncellendi.");
+                await LoadOrders();
+                CloseModal();
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Sipariş durumu güncellenirken bir hata oluştu!");
+            }
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (selectedOrder != null)
+        {
+            // OrderStatus string'ini Guid'e çevir
+            if (Guid.TryParse(selectedOrder.OrderStatus, out Guid statusGuid))
+            {
+                selectedOrderStatus = statusGuid;
+            }
+        }
+    }
 }
 
 <style>
-    .table th {
-        white-space: nowrap;
+    .modal {
+        background-color: rgba(0,0,0,0.5);
     }
 
-    .badge {
-        font-size: 0.85em;
-        padding: 0.5em 0.75em;
+    .table th {
+        white-space: nowrap;
     }
 </style> 

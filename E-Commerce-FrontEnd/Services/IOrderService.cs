@@ -13,5 +13,6 @@ namespace E_Commerce_FrontEnd.Services
 
         Task<List<Order>> GetRecentOrders(int count);
         Task<bool> CreateOrder(CreateOrderRequest request);
+        Task<bool> UpdateOrderStatus(Guid orderId, Guid statusId);
     }
 } 

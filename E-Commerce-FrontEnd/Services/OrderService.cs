@@ -159,6 +159,22 @@ namespace E_Commerce_FrontEnd.Services
                 return new List<Order>();
             }
         }
+
+
+        public async Task<bool> UpdateOrderStatus(Guid orderId, Guid statusId)
+        {
+            try
+            {
+                await SetAuthHeader();
+                var response = await _httpClient.PutAsJsonAsync($"api/Order/{orderId}/status", statusId);
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Sipariş durumu güncellenirken hata oluştu: {ex.Message}");
+                return false;
+            }
+        }
     }
 
     // Sadece Auth ile ilgili sınıflar burada kalacak
