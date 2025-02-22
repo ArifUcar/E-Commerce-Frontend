@@ -229,7 +229,101 @@
 
     <!-- Mobile Menu -->
     <div class="mobile-menu @(showMobileMenu ? "show" : "")">
-        <!-- Mobile menu content -->
+        <div class="p-3 border-bottom">
+            @if (AuthService.IsAuthenticated)
+            {
+                <div class="d-flex align-items-center mb-3">
+                    <i class="bi bi-person-circle fs-1 text-primary me-2"></i>
+                    <div>
+                        <h6 class="mb-0">@AuthService.CurrentUser?.FirstName @AuthService.CurrentUser?.LastName</h6>
+                        <small class="text-muted">@AuthService.CurrentUser?.Email</small>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="d-grid gap-2 mb-3">
+                    <a href="/login" class="btn btn-primary">
+                        <i class="bi bi-person me-2"></i>Giriş Yap
+                    </a>
+                    <a href="/register" class="btn btn-outline-primary">
+                        <i class="bi bi-person-plus me-2"></i>Kayıt Ol
+                    </a>
+                </div>
+            }
+        </div>
+
+        <div class="p-3">
+            <div class="input-group mb-3">
+                <input type="text" 
+                       class="form-control" 
+                       placeholder="Ürün ara..."
+                       @bind="searchTerm"
+                       @bind:event="oninput"
+                       @onkeyup="HandleSearch">
+                <button class="btn btn-primary" @onclick="PerformSearch">
+                    <i class="bi bi-search"></i>
+                </button>
+            </div>
+
+            <div class="mobile-menu-items">
+                <a href="/" class="mobile-menu-item">
+                    <i class="bi bi-house me-2"></i>
+                    Ana Sayfa
+                </a>
+                <a href="/cart" class="mobile-menu-item">
+                    <i class="bi bi-cart3 me-2"></i>
+                    Sepetim
+                    @if (cartItemCount > 0)
+                    {
+                        <span class="badge bg-primary ms-auto">@cartItemCount</span>
+                    }
+                </a>
+                <a href="/favorites" class="mobile-menu-item">
+                    <i class="bi bi-heart me-2"></i>
+                    Favorilerim
+                    @if (favoriteCount > 0)
+                    {
+                        <span class="badge bg-primary ms-auto">@favoriteCount</span>
+                    }
+                </a>
+                <a href="/orders" class="mobile-menu-item">
+                    <i class="bi bi-bag me-2"></i>
+                    Siparişlerim
+                </a>
+
+                @if (AuthService.CurrentUser?.Roles?.Contains("Admin") == true)
+                {
+                    <a href="/admin" class="mobile-menu-item text-primary">
+                        <i class="bi bi-speedometer2 me-2"></i>
+                        Yönetim Paneli
+                    </a>
+                }
+
+                <div class="border-top my-3"></div>
+
+                <div class="fw-bold mb-2">Kategoriler</div>
+                @if (categories?.Any() == true)
+                {
+                    @foreach (var category in categories)
+                    {
+                        <a href="/category/@category.Id" class="mobile-menu-item">
+                            <i class="bi bi-chevron-right me-2"></i>
+                            @category.CategoryName
+                        </a>
+                    }
+                }
+
+                @if (AuthService.IsAuthenticated)
+                {
+                    <div class="border-top my-3"></div>
+                    <button class="mobile-menu-item text-danger border-0 bg-transparent w-100 text-start" @onclick="Logout">
+                        <i class="bi bi-box-arrow-right me-2"></i>
+                        Çıkış Yap
+                    </button>
+                }
+            </div>
+        </div>
     </div>
     <div class="mobile-menu-overlay @(showMobileMenu ? "show" : "")" @onclick="ToggleMobileMenu"></div>
 </header>
@@ -302,12 +396,13 @@
     .mobile-menu {
         position: fixed;
         top: 0;
-        left: -280px;
+        left: -100%;
         width: 280px;
         height: 100vh;
         background: white;
         z-index: 1040;
         transition: left 0.3s ease;
+        overflow-y: auto;
     }
 
     .mobile-menu.show {
@@ -330,6 +425,24 @@
     .mobile-menu-overlay.show {
         opacity: 1;
         visibility: visible;
+    }
+
+    .mobile-menu-item {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem 0;
+        color: var(--bs-gray-700);
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+
+    .mobile-menu-item:hover {
+        color: var(--bs-primary);
+    }
+
+    .mobile-menu-items {
+        display: flex;
+        flex-direction: column;
     }
 
     /* Navigation Links */
