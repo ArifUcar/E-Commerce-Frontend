@@ -146,29 +146,29 @@
                         @if (AuthService.IsAuthenticated)
                         {
                             <div class="dropdown">
-                                <button class="header-action dropdown-toggle border-0 bg-transparent" 
-                                        data-bs-toggle="dropdown">
-                                    <i class="bi bi-person-circle"></i>
+                                <button class="header-action dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                    <i class="bi bi-person"></i>
                                     <span class="d-none d-xl-inline ms-2">@AuthService.CurrentUser?.FirstName</span>
                                 </button>
-                                <ul class="dropdown-menu dropdown-menu-end border-0 shadow-sm">
-                                    @if (AuthService.CurrentUser?.Roles?.Contains("Admin") == true)
-                                    {
-                                        <li>
-                                            <a class="dropdown-item py-2 text-primary" href="/admin">
-                                                <i class="bi bi-speedometer2 me-2"></i>Yönetim Paneli
-                                            </a>
-                                            <li><hr class="dropdown-divider"></li>
-                                        </li>
-                                    }
-                                    <li><a class="dropdown-item py-2" href="/profile"><i class="bi bi-person me-2"></i>Profilim</a></li>
-                                    <li><a class="dropdown-item py-2" href="/orders"><i class="bi bi-bag me-2"></i>Siparişlerim</a></li>
-                                    <li><a class="dropdown-item py-2" href="/addresses"><i class="bi bi-geo-alt me-2"></i>Adreslerim</a></li>
-                                    <li><a class="dropdown-item py-2" href="/favorites"><i class="bi bi-heart me-2"></i>Favorilerim</a></li>
-                                    <li><a class="dropdown-item py-2" href="/settings"><i class="bi bi-gear me-2"></i>Ayarlar</a></li>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li>
+                                        <a class="dropdown-item" href="/profile">
+                                            <i class="bi bi-person-circle me-2"></i>Profilim
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="/orders">
+                                            <i class="bi bi-box me-2"></i>Siparişlerim
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="/change-password">
+                                            <i class="bi bi-key me-2"></i>Şifre Değiştir
+                                        </a>
+                                    </li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li>
-                                        <button class="dropdown-item py-2 text-danger" @onclick="Logout">
+                                        <button class="dropdown-item text-danger" @onclick="Logout">
                                             <i class="bi bi-box-arrow-right me-2"></i>Çıkış Yap
                                         </button>
                                     </li>
@@ -292,30 +292,28 @@
                     Siparişlerim
                 </a>
 
-                @if (AuthService.CurrentUser?.Roles?.Contains("Admin") == true)
-                {
-                    <a href="/admin" class="mobile-menu-item text-primary">
-                        <i class="bi bi-speedometer2 me-2"></i>
-                        Yönetim Paneli
-                    </a>
-                }
-
-                <div class="border-top my-3"></div>
-
-                <div class="fw-bold mb-2">Kategoriler</div>
-                @if (categories?.Any() == true)
-                {
-                    @foreach (var category in categories)
-                    {
-                        <a href="/category/@category.Id" class="mobile-menu-item">
-                            <i class="bi bi-chevron-right me-2"></i>
-                            @category.CategoryName
-                        </a>
-                    }
-                }
-
                 @if (AuthService.IsAuthenticated)
                 {
+                    <a href="/profile" class="mobile-menu-item">
+                        <i class="bi bi-person me-2"></i>
+                        Profilim
+                    </a>
+                    <a href="/orders" class="mobile-menu-item">
+                        <i class="bi bi-bag me-2"></i>
+                        Siparişlerim
+                    </a>
+                    <a href="/change-password" class="mobile-menu-item">
+                        <i class="bi bi-key me-2"></i>
+                        Şifre Değiştir
+                    </a>
+                    @if (AuthService.CurrentUser?.Roles?.Contains("Admin") == true)
+                    {
+                        <a href="/admin" class="mobile-menu-item text-primary">
+                            <i class="bi bi-speedometer2 me-2"></i>
+                            Yönetim Paneli
+                        </a>
+                    }
+
                     <div class="border-top my-3"></div>
                     <button class="mobile-menu-item text-danger border-0 bg-transparent w-100 text-start" @onclick="Logout">
                         <i class="bi bi-box-arrow-right me-2"></i>
@@ -463,6 +461,29 @@
         .search-box {
             margin: 1rem 0;
         }
+    }
+
+    .dropdown-menu {
+        padding: 0.5rem 0;
+        border: none;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+
+    .dropdown-item {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+    }
+
+    .dropdown-item:hover {
+        background-color: #f8f9fa;
+    }
+
+    .dropdown-item i {
+        font-size: 1rem;
+    }
+
+    .dropdown-divider {
+        margin: 0.5rem 0;
     }
 </style>
 

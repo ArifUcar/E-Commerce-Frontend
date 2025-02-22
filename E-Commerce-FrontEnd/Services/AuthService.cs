@@ -105,5 +105,19 @@ namespace E_Commerce_FrontEnd.Services
                 return false;
             }
         }
+
+        public async Task<bool> ChangePassword(ChangePasswordModel model)
+        {
+            try
+            {
+                var response = await _httpClient.PostAsJsonAsync("api/Auth/ChangePassword", model);
+                return response.IsSuccessStatusCode;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Şifre değiştirme işlemi sırasında hata: {ex.Message}");
+                return false;
+            }
+        }
     }
 } 

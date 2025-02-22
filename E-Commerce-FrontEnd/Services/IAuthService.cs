@@ -12,5 +12,6 @@ namespace E_Commerce_FrontEnd.Services
         UserInfo CurrentUser { get; }
         string Token { get; }
         Task InitializeAuthenticationState();
+        Task<bool> ChangePassword(ChangePasswordModel model);
     }
 } 
