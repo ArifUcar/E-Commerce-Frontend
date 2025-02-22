@@ -143,7 +143,12 @@ else
         }
         else
         {
-            success = await CategoryService.UpdateCategory(editingCategory.Id, categoryModel);
+            var updateRequest = new CategoryUpdateRequest
+            {
+                Id = editingCategory.Id,
+                CategoryName = categoryModel.CategoryName
+            };
+            success = await CategoryService.UpdateCategory(updateRequest);
         }
 
         if (success)

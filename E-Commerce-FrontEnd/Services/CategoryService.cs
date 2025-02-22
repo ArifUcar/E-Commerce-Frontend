@@ -53,11 +53,11 @@ namespace E_Commerce_FrontEnd.Services
             }
         }
 
-        public async Task<bool> UpdateCategory(Guid id, CategoryCreateModel category)
+        public async Task<bool> UpdateCategory(CategoryUpdateRequest request)
         {
             try
             {
-                var response = await _httpClient.PutAsJsonAsync($"api/Categories/UpdateCategory/{id}", new { categoryName = category.CategoryName });
+                var response = await _httpClient.PutAsJsonAsync("api/Categories/UpdateCategory", request);
                 return response.IsSuccessStatusCode;
             }
             catch (Exception ex)
