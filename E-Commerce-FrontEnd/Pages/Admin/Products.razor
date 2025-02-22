@@ -438,15 +438,22 @@ else
     {
         if (await JSRuntime.InvokeAsync<bool>("confirm", "Bu ürünü silmek istediğinize emin misiniz?"))
         {
-            var success = await ProductService.DeleteProduct(id);
-            if (success)
+            try
             {
-                await LoadData();
-                await JSRuntime.InvokeVoidAsync("alert", "Ürün başarıyla silindi.");
+                var success = await ProductService.DeleteProduct(id);
+                if (success)
+                {
+                    await LoadData();
+                    await JSRuntime.InvokeVoidAsync("alert", "Ürün başarıyla silindi.");
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", "Ürün silinirken bir hata oluştu!");
+                }
             }
-            else
+            catch (Exception ex)
             {
-                await JSRuntime.InvokeVoidAsync("alert", "Ürün silinirken bir hata oluştu!");
+                await JSRuntime.InvokeVoidAsync("alert", $"Hata: {ex.Message}");
             }
         }
     }
@@ -461,8 +468,6 @@ else
         isEditing = false;
         selectedProductId = Guid.Empty;
     }
-
-
 
     private async Task HandleFileSelected(InputFileChangeEventArgs e)
     {

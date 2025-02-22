@@ -227,8 +227,7 @@ namespace E_Commerce_FrontEnd.Services
         {
             try
             {
-                await SetAuthHeader();
-                var response = await _httpClient.DeleteAsync($"api/Product/{id}");
+                var response = await _httpClient.DeleteAsync($"api/Product/Delete/{id}");
                 return response.IsSuccessStatusCode;
             }
             catch (Exception ex)
