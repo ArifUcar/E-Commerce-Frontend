@@ -208,17 +208,53 @@ namespace E_Commerce_FrontEnd.Services
             }
         }
 
-        public async Task<bool> UpdateProduct(Guid id, CreateProductCommand product)
+        public async Task<bool> UpdateProduct(UpdateProductCommand command)
         {
             try
             {
                 await SetAuthHeader();
-                var response = await _httpClient.PutAsJsonAsync($"api/Product/{id}", product);
+                
+                // İstek öncesi verileri logla
+                Console.WriteLine("Güncelleme isteği gönderiliyor:");
+                Console.WriteLine($"Ürün ID: {command.Id}");
+                Console.WriteLine($"Ürün Adı: {command.ProductName}");
+                Console.WriteLine($"Açıklama: {command.Description}");
+                Console.WriteLine($"Fiyat: {command.Price}");
+                Console.WriteLine($"İndirimli Fiyat: {command.DiscountedPrice}");
+                Console.WriteLine($"İndirim Oranı: {command.DiscountRate}");
+                Console.WriteLine($"Kategori ID: {command.CategoryId}");
+                Console.WriteLine($"Stok: {command.StockQuantity}");
+                
+                if (command.ProductDetail != null)
+                {
+                    Console.WriteLine("Ürün Detayları:");
+                    Console.WriteLine($"Detay ID: {command.ProductDetail.Id}");
+                    Console.WriteLine($"Renk: {command.ProductDetail.Color}");
+                    Console.WriteLine($"Boyut: {command.ProductDetail.Size}");
+                    Console.WriteLine($"Marka: {command.ProductDetail.Brand}");
+                    Console.WriteLine($"Model: {command.ProductDetail.Model}");
+                }
+
+                var response = await _httpClient.PutAsJsonAsync("api/Product/Update", command);
+                
+                // Yanıt detaylarını logla
+                Console.WriteLine($"API Yanıt Kodu: {response.StatusCode}");
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"API Hata Mesajı: {errorContent}");
+                }
+
                 return response.IsSuccessStatusCode;
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Ürün güncellenirken hata oluştu: {ex.Message}");
+                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"Inner Exception: {ex.InnerException.Message}");
+                }
                 return false;
             }
         }
@@ -237,6 +273,6 @@ namespace E_Commerce_FrontEnd.Services
             }
         }
 
-        
+       
     }
 } 

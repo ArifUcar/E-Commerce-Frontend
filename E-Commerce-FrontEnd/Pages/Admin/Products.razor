@@ -63,7 +63,7 @@ else
                                     </span>
                                 </td>
                                 <td>
-                                    <button class="btn btn-sm btn-primary me-2" @onclick="() => ShowEditProductModal(product)">
+                                    <button class="btn btn-sm btn-primary me-2" @onclick="() => ShowEditModal(product.Id)">
                                         <i class="bi bi-pencil"></i>
                                     </button>
                                     <button class="btn btn-sm btn-danger" @onclick="() => DeleteProduct(product.Id)">
@@ -90,7 +90,7 @@ else
                     <button type="button" class="btn-close" @onclick="CloseModal"></button>
                 </div>
                 <div class="modal-body">
-                    <EditForm Model="@currentProduct" OnValidSubmit="HandleSubmit">
+                    <EditForm Model="@currentProduct" OnValidSubmit="HandleValidSubmit">
                         <DataAnnotationsValidator />
 
                         <div class="row">
@@ -331,6 +331,12 @@ else
     private async Task LoadData()
     {
         products = await ProductService.GetAllProducts();
+
+        foreach (var product in products)
+        {
+            Console.WriteLine($"Product: {product.Id}, Price: {product.Price}");
+        }
+
         categories = await CategoryService.GetAllCategories();
     }
 
@@ -344,51 +350,75 @@ else
         showModal = true;
     }
 
-    private void ShowEditProductModal(Product product)
-    {
-        currentProduct = new CreateProductCommand
-        {
-            ProductName = product.ProductName,
-            Description = product.Description,
-            Price = product.Price,
-            DiscountedPrice = product.DiscountedPrice,
-            DiscountRate = product.DiscountRate,
-            DiscountStartDate = product.DiscountStartDate,
-            DiscountEndDate = product.DiscountEndDate,
-            StockQuantity = product.StockQuantity,
-            CategoryId = product.CategoryId,
-            Base64Image = product.Base64Image,
-            ProductDetail = new ProductDetailCommand
-            {
-                Color = product.ProductDetail?.Color,
-                Size = product.ProductDetail?.Size,
-                Material = product.ProductDetail?.Material,
-                Brand = product.ProductDetail?.Brand,
-                Model = product.ProductDetail?.Model,
-                Warranty = product.ProductDetail?.Warranty,
-                Specifications = product.ProductDetail?.Specifications,
-                AdditionalInformation = product.ProductDetail?.AdditionalInformation,
-                Weight = product.ProductDetail?.Weight,
-                WeightUnit = product.ProductDetail?.WeightUnit,
-                Dimensions = product.ProductDetail?.Dimensions,
-                StockCode = product.ProductDetail?.StockCode,
-                Barcode = product.ProductDetail?.Barcode
-            }
-        };
-        selectedProductId = product.Id;
-        isEditing = true;
-        showModal = true;
-    }
-
-    private async Task HandleSubmit()
+    private async Task ShowEditModal(Guid id)
     {
         try 
         {
-            loading = true;
-
-            // API'nin beklediği formata uygun hale getir
-            var productToSave = new CreateProductCommand
+            var product = await ProductService.GetProductById(id);
+            if (product != null)
             {
+                Console.WriteLine($"Düzenlenecek ürün: ID={product.Id}, Ad={product.ProductName}");
+                
+                currentProduct = new CreateProductCommand
+                {
+                    ProductName = product.ProductName,
+                    Description = product.Description,
+                    Price = product.Price,
+                    DiscountedPrice = product.DiscountedPrice,
+                    DiscountRate = product.DiscountRate,
+                    DiscountStartDate = product.DiscountStartDate,
+                    DiscountEndDate = product.DiscountEndDate,
+                    StockQuantity = product.StockQuantity,
+                    CategoryId = product.CategoryId,
+                    Base64Image = product.Base64Image,
+                    ProductDetail = new ProductDetailCommand
+                    {
+                        Id = product.ProductDetail?.Id ?? Guid.Empty,
+                        Color = product.ProductDetail?.Color,
+                        Size = product.ProductDetail?.Size,
+                        Material = product.ProductDetail?.Material,
+                        Brand = product.ProductDetail?.Brand,
+                        Model = product.ProductDetail?.Model,
+                        Warranty = product.ProductDetail?.Warranty,
+                        Specifications = product.ProductDetail?.Specifications,
+                        AdditionalInformation = product.ProductDetail?.AdditionalInformation,
+                        Weight = product.ProductDetail?.Weight ?? 0,
+                        WeightUnit = product.ProductDetail?.WeightUnit,
+                        Dimensions = product.ProductDetail?.Dimensions,
+                        StockCode = product.ProductDetail?.StockCode ?? 0,
+                        Barcode = product.ProductDetail?.Barcode
+                    }
+                };
+
+                selectedProductId = id;
+                isEditing = true;
+                showModal = true;
+
+                Console.WriteLine("Form dolduruldu:");
+                Console.WriteLine($"Seçilen ID: {selectedProductId}");
+                Console.WriteLine($"Ürün Adı: {currentProduct.ProductName}");
+                Console.WriteLine($"Fiyat: {currentProduct.Price}");
+                Console.WriteLine($"Detay ID: {currentProduct.ProductDetail?.Id}");
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Ürün bulunamadı!");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ürün düzenleme modalı açılırken hata: {ex.Message}");
+            await JSRuntime.InvokeVoidAsync("alert", "Ürün bilgileri yüklenirken bir hata oluştu!");
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (isEditing)
+        {
+            var updateCommand = new UpdateProductCommand
+            {
+                Id = selectedProductId,
                 ProductName = currentProduct.ProductName,
                 Description = currentProduct.Description,
                 Price = currentProduct.Price,
@@ -399,38 +429,80 @@ else
                 StockQuantity = currentProduct.StockQuantity,
                 CategoryId = currentProduct.CategoryId,
                 Base64Image = currentProduct.Base64Image,
-                ProductDetail = currentProduct.ProductDetail
+                ProductDetail = new UpdateProductDetailCommand
+                {
+                    Id=currentProduct.ProductDetail.Id,
+                    Color = currentProduct.ProductDetail.Color,
+                    Size = currentProduct.ProductDetail.Size,
+                    Material = currentProduct.ProductDetail.Material,
+                    Brand = currentProduct.ProductDetail.Brand,
+                    Model = currentProduct.ProductDetail.Model,
+                    Warranty = currentProduct.ProductDetail.Warranty,
+                    Specifications = currentProduct.ProductDetail.Specifications,
+                    AdditionalInformation = currentProduct.ProductDetail.AdditionalInformation,
+                    Weight = currentProduct.ProductDetail.Weight,
+                    WeightUnit = currentProduct.ProductDetail.WeightUnit,
+                    Dimensions = currentProduct.ProductDetail.Dimensions,
+                    StockCode = currentProduct.ProductDetail.StockCode,
+                    Barcode = currentProduct.ProductDetail.Barcode
+                }
             };
 
-            bool success;
-            if (isEditing)
+            var result = await ProductService.UpdateProduct(updateCommand);
+            if (result)
             {
-                success = await ProductService.UpdateProduct(selectedProductId, productToSave);
-            }
-            else
-            {
-                success = await ProductService.AddProduct(productToSave);
-            }
-
-            if (success)
-            {
+                await JSRuntime.InvokeVoidAsync("alert", "Ürün başarıyla güncellendi!");
                 await LoadData();
                 CloseModal();
-                await JSRuntime.InvokeVoidAsync("alert", 
-                    isEditing ? "Ürün başarıyla güncellendi!" : "Ürün başarıyla eklendi!");
             }
             else
             {
-                await JSRuntime.InvokeVoidAsync("alert", "Bir hata oluştu!");
+                await JSRuntime.InvokeVoidAsync("alert", "Ürün güncellenirken bir hata oluştu!");
             }
         }
-        catch (Exception ex)
+        else 
         {
-            await JSRuntime.InvokeVoidAsync("alert", $"Hata: {ex.Message}");
-        }
-        finally
-        {
-            loading = false;
+            try 
+            {
+                loading = true;
+
+                // API'nin beklediği formata uygun hale getir
+                var productToSave = new CreateProductCommand
+                {
+                    ProductName = currentProduct.ProductName,
+                    Description = currentProduct.Description,
+                    Price = currentProduct.Price,
+                    DiscountedPrice = currentProduct.DiscountedPrice,
+                    DiscountRate = currentProduct.DiscountRate,
+                    DiscountStartDate = currentProduct.DiscountStartDate,
+                    DiscountEndDate = currentProduct.DiscountEndDate,
+                    StockQuantity = currentProduct.StockQuantity,
+                    CategoryId = currentProduct.CategoryId,
+                    Base64Image = currentProduct.Base64Image,
+                    ProductDetail = currentProduct.ProductDetail
+                };
+
+                bool success = await ProductService.AddProduct(productToSave);
+
+                if (success)
+                {
+                    await LoadData();
+                    CloseModal();
+                    await JSRuntime.InvokeVoidAsync("alert", "Ürün başarıyla eklendi!");
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("alert", "Bir hata oluştu!");
+                }
+            }
+            catch (Exception ex)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"Hata: {ex.Message}");
+            }
+            finally
+            {
+                loading = false;
+            }
         }
     }
 

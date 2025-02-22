@@ -2,9 +2,9 @@ using System;
 
 namespace E_Commerce_FrontEnd.Models.Commands
 {
-    public class CreateProductCommand
+    public class UpdateProductCommand
     {
-       
+        public Guid Id { get; set; }
         public string ProductName { get; set; }
         public string Description { get; set; }
         public decimal Price { get; set; }
@@ -14,11 +14,10 @@ namespace E_Commerce_FrontEnd.Models.Commands
         public DateTime? DiscountEndDate { get; set; }
         public int StockQuantity { get; set; }
         public Guid CategoryId { get; set; }
-        public string? Base64Image { get; set; }
-        public ProductDetailCommand? ProductDetail { get; set; }
+        public string Base64Image { get; set; }
+        public UpdateProductDetailCommand ProductDetail { get; set; }
     }
-
-    public class ProductDetailCommand
+    public class UpdateProductDetailCommand
     {
         public Guid Id { get; set; }
         public string? Color { get; set; }

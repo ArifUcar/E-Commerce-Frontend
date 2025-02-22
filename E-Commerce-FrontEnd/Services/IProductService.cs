@@ -15,8 +15,8 @@ namespace E_Commerce_FrontEnd.Services
         Task<int> GetLowStockProducts();
         Task<List<Product>> GetDiscountedProducts();
         Task<bool> AddProduct(CreateProductCommand product);
-        Task<bool> UpdateProduct(Guid id, CreateProductCommand product);
         Task<bool> DeleteProduct(Guid id);
+        Task<bool> UpdateProduct(UpdateProductCommand command);
         // Diğer metotlar eklenebilir
     }
 } 

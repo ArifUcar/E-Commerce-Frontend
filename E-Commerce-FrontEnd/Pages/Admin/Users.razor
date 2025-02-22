@@ -12,14 +12,11 @@
     <div class="card border-0 shadow-sm">
         <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
             <h2 class="h5 mb-0">Kullanıcı Yönetimi</h2>
-            <button class="btn btn-primary btn-sm" @onclick="() => ShowUserModal(null)">
-                <i class="bi bi-plus-lg"></i> Yeni Kullanıcı
-            </button>
         </div>
         <div class="card-body">
             @if (users == null)
             {
-                <div class="text-center py-4">
+                <div class="text-center">
                     <div class="spinner-border text-primary" role="status">
                         <span class="visually-hidden">Yükleniyor...</span>
                     </div>
@@ -34,17 +31,16 @@
             else
             {
                 <div class="table-responsive">
-                    <table class="table table-hover">
+                    <table class="table table-hover align-middle">
                         <thead>
                             <tr>
                                 <th>Ad Soyad</th>
-                                <th>Email</th>
+                                <th>E-posta</th>
                                 <th>Telefon</th>
-                                <th>Kayıt Tarihi</th>
-                                <th>Son Giriş</th>
                                 <th>Roller</th>
                                 <th>Durum</th>
-                                <th>İşlemler</th>
+                                <th>Kayıt Tarihi</th>
+                                <th>Son Giriş</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -54,32 +50,19 @@
                                     <td>@user.FirstName @user.LastName</td>
                                     <td>@user.Email</td>
                                     <td>@user.PhoneNumber</td>
-                                    <td>@user.CreatedDate.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
-                                    <td>@user.LastLoginDate.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
                                     <td>
                                         @foreach (var role in user.Roles)
                                         {
-                                            <span class="badge bg-info me-1">@role</span>
+                                            <span class="badge bg-primary me-1">@role</span>
                                         }
                                     </td>
                                     <td>
-                                        @if (user.IsActive)
-                                        {
-                                            <span class="badge bg-success">Aktif</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge bg-danger">Pasif</span>
-                                        }
+                                        <span class="badge bg-@(user.IsActive ? "success" : "danger")">
+                                            @(user.IsActive ? "Aktif" : "Pasif")
+                                        </span>
                                     </td>
-                                    <td>
-                                        <button class="btn btn-sm btn-outline-primary me-2" @onclick="() => ShowUserModal(user)">
-                                            <i class="bi bi-pencil"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteUser(user)">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </td>
+                                    <td>@user.CreatedDate.ToShortDateString()</td>
+                                    <td>@user.LastLoginDate.ToShortDateString()</td>
                                 </tr>
                             }
                         </tbody>
@@ -88,82 +71,10 @@
             }
         </div>
     </div>
-
-    @if (showModal)
-    {
-        <div class="modal fade show" style="display: block;" tabindex="-1">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">@(selectedUser == null ? "Yeni Kullanıcı" : "Kullanıcı Düzenle")</h5>
-                        <button type="button" class="btn-close" @onclick="CloseModal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label class="form-label">Ad</label>
-                            <input type="text" class="form-control" @bind="editUser.FirstName">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Soyad</label>
-                            <input type="text" class="form-control" @bind="editUser.LastName">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Email</label>
-                            <input type="email" class="form-control" @bind="editUser.Email">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Telefon</label>
-                            <input type="tel" class="form-control" @bind="editUser.PhoneNumber">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Şifre</label>
-                            <input type="password" class="form-control" @bind="editUser.Password">
-                            @if (selectedUser != null)
-                            {
-                                <small class="text-muted">Boş bırakırsanız şifre değişmeyecektir.</small>
-                            }
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label d-block">Roller</label>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="checkbox" 
-                                       @bind="isAdmin" id="roleAdmin">
-                                <label class="form-check-label" for="roleAdmin">Admin</label>
-                            </div>
-                            <div class="form-check form-check-inline">
-                                <input class="form-check-input" type="checkbox" 
-                                       @bind="isUser" id="roleUser">
-                                <label class="form-check-label" for="roleUser">User</label>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" 
-                                       @bind="editUser.IsActive" id="isActive">
-                                <label class="form-check-label" for="isActive">
-                                    Aktif
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" @onclick="CloseModal">İptal</button>
-                        <button type="button" class="btn btn-primary" @onclick="SaveUser">Kaydet</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="modal-backdrop fade show"></div>
-    }
 </div>
 
 @code {
     private List<User> users;
-    private User selectedUser;
-    private User editUser = new();
-    private bool showModal;
-    private bool isAdmin;
-    private bool isUser;
 
     protected override async Task OnInitializedAsync()
     {
@@ -173,87 +84,6 @@
     private async Task LoadUsers()
     {
         users = await UserService.GetUsers();
-    }
-
-    private void ShowUserModal(User user)
-    {
-        selectedUser = user;
-        if (user != null)
-        {
-            editUser = new User
-            {
-                Id = user.Id,
-                FirstName = user.FirstName,
-                LastName = user.LastName,
-                Email = user.Email,
-                PhoneNumber = user.PhoneNumber,
-                IsActive = user.IsActive,
-                Roles = new List<string>(user.Roles)
-            };
-            isAdmin = user.Roles.Contains("Admin");
-            isUser = user.Roles.Contains("User");
-        }
-        else
-        {
-            editUser = new User
-            {
-                IsActive = true,
-                Roles = new List<string>()
-            };
-            isAdmin = false;
-            isUser = true;
-        }
-        showModal = true;
-    }
-
-    private async Task SaveUser()
-    {
-        editUser.Roles = new List<string>();
-        if (isAdmin) editUser.Roles.Add("Admin");
-        if (isUser) editUser.Roles.Add("User");
-
-        bool success;
-        if (selectedUser == null)
-        {
-            success = await UserService.CreateUser(editUser);
-        }
-        else
-        {
-            success = await UserService.UpdateUser(editUser);
-        }
-
-        if (success)
-        {
-            await LoadUsers();
-            CloseModal();
-        }
-        else
-        {
-            await JSRuntime.InvokeVoidAsync("alert", "Kullanıcı kaydedilirken bir hata oluştu!");
-        }
-    }
-
-    private async Task DeleteUser(User user)
-    {
-        if (await JSRuntime.InvokeAsync<bool>("confirm", "Bu kullanıcıyı silmek istediğinize emin misiniz?"))
-        {
-            var success = await UserService.DeleteUser(user.Id);
-            if (success)
-            {
-                await LoadUsers();
-            }
-            else
-            {
-                await JSRuntime.InvokeVoidAsync("alert", "Kullanıcı silinirken bir hata oluştu!");
-            }
-        }
-    }
-
-    private void CloseModal()
-    {
-        showModal = false;
-        selectedUser = null;
-        editUser = new User();
     }
 }
 
