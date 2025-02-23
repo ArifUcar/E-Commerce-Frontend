@@ -7,11 +7,12 @@ namespace E_Commerce_FrontEnd.Services
         event Action OnAuthenticationChanged;
         Task<bool> Login(LoginModel loginModel);
         Task<bool> Register(RegisterModel registerModel);
-        void Logout();
+        Task Logout();
         bool IsAuthenticated { get; }
         UserInfo CurrentUser { get; }
         string Token { get; }
         Task InitializeAuthenticationState();
         Task<bool> ChangePassword(ChangePasswordModel model);
+        Task LoadAuthDataFromStorage();
     }
 } 

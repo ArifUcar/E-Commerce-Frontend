@@ -23,7 +23,7 @@ namespace E_Commerce_FrontEnd.Services
         {
             try
             {
-                var authData = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", "auth_data");
+                var authData = await _jsRuntime.InvokeAsync<string>("sessionStorage.getItem", "auth_data");
                 if (!string.IsNullOrEmpty(authData))
                 {
                     var authInfo = JsonSerializer.Deserialize<AuthData>(authData);
