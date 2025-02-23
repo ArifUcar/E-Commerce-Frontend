@@ -129,14 +129,21 @@ else
                                     <div class="col-6">
                                         <div class="mb-3">
                                             <label class="form-label">Fiyat</label>
-                                            <InputNumber @bind-Value="currentProduct.Price" class="form-control" />
+                                            <div class="input-group">
+                                                <input type="number" class="form-control" @bind="currentProduct.Price" @bind:event="oninput" @onchange="HandlePriceChange">
+                                                <span class="input-group-text">₺</span>
+                                            </div>
                                             <ValidationMessage For="@(() => currentProduct.Price)" />
                                         </div>
                                     </div>
                                     <div class="col-6">
                                         <div class="mb-3">
                                             <label class="form-label">İndirimli Fiyat</label>
-                                            <InputNumber @bind-Value="currentProduct.DiscountedPrice" class="form-control" />
+                                            <div class="input-group">
+                                                <input type="number" class="form-control" @bind="currentProduct.DiscountedPrice" @bind:event="oninput" @onchange="HandleDiscountedPriceChange">
+                                                <span class="input-group-text">₺</span>
+                                            </div>
+                                            <ValidationMessage For="@(() => currentProduct.DiscountedPrice)" />
                                         </div>
                                     </div>
                                 </div>
@@ -145,7 +152,11 @@ else
                                     <div class="col-6">
                                         <div class="mb-3">
                                             <label class="form-label">İndirim Oranı (%)</label>
-                                            <InputNumber @bind-Value="currentProduct.DiscountRate" class="form-control" />
+                                            <div class="input-group">
+                                                <input type="number" class="form-control" @bind="currentProduct.DiscountRate" readonly>
+                                                <span class="input-group-text">%</span>
+                                            </div>
+                                            <ValidationMessage For="@(() => currentProduct.DiscountRate)" />
                                         </div>
                                     </div>
                                     <div class="col-6">
@@ -549,6 +560,36 @@ else
             var buffer = new byte[file.Size];
             await file.OpenReadStream().ReadAsync(buffer);
             currentProduct.Base64Image = Convert.ToBase64String(buffer);
+        }
+    }
+
+    private void HandlePriceChange()
+    {
+        if (currentProduct.Price > 0 && currentProduct.DiscountedPrice.HasValue)
+        {
+            CalculateDiscountRate();
+        }
+    }
+
+    private void HandleDiscountedPriceChange()
+    {
+        if (currentProduct.Price > 0 && currentProduct.DiscountedPrice.HasValue)
+        {
+            CalculateDiscountRate();
+        }
+    }
+
+    private void CalculateDiscountRate()
+    {
+        if (currentProduct.Price > 0 && currentProduct.DiscountedPrice.HasValue && currentProduct.DiscountedPrice.Value < currentProduct.Price)
+        {
+            decimal discountAmount = currentProduct.Price - currentProduct.DiscountedPrice.Value;
+            currentProduct.DiscountRate = Math.Round((discountAmount / currentProduct.Price) * 100, 2);
+        }
+        else
+        {
+            currentProduct.DiscountRate = 0;
+            currentProduct.DiscountedPrice = null;
         }
     }
 } 
