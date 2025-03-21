@@ -1,3 +1,8 @@
+
+E-Commerce BackEnd Linki : https://github.com/ArifUcar/ECommerce-BackEnd
+
+
+
 E-Comemrce FrontEnd Dökümanatasyonu
 Bu proje, Blazor WebAssembly kullanılarak geliştirilmiş modern bir e-ticaret platformudur. Kullanıcıların ürünleri görüntüleyebileceği, favorilere ekleyebileceği, sepete ekleyebileceği ve sipariş verebileceği kapsamlı bir web uygulamasıdır.
 Temel Bileşenler
